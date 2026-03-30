@@ -1,0 +1,50 @@
+name: lawsuit-monitor
+permissions:
+  contents: read
+  issues: write
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"   # 매시간 정각(UTC)
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run monitor
+        env:
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          COURTLISTENER_TOKEN: ${{ secrets.COURTLISTENER_TOKEN }}
+          # 기본값(코드 내 default) = 3일
+          # Actions → Variables에 LOOKBACK_DAYS를 만들면 2 등으로 쉽게 조정 가능
+          LOOKBACK_DAYS: ${{ vars.LOOKBACK_DAYS }}
+          # 도켓 후보 Top3 표기(0/1). Actions → Variables에 SHOW_DOCKET_CANDIDATES 설정 가능
+          SHOW_DOCKET_CANDIDATES: ${{ vars.SHOW_DOCKET_CANDIDATES }}
+          # (옵션) 긴 셀(도켓 후보/최근 업데이트)을 <details>로 접기
+          COLLAPSE_LONG_CELLS: ${{ vars.COLLAPSE_LONG_CELLS }}
+          # (옵션) 기사 주소 섹션을 <details>로 접기
+          COLLAPSE_ARTICLE_URLS: ${{ vars.COLLAPSE_ARTICLE_URLS }}
+
+          ISSUE_TITLE_BASE: "AI 소송 모니터링"
+          ISSUE_LABEL: "ai-lawsuit-monitor"
+          # 디버그 모드(0/1). Actions -> Variables에 DEBUG=1 설정 시 활성화
+          DEBUG: ${{ vars.DEBUG }}
+        run: |
+          python -m src.run
