@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    - cron: "0 */2 * * *"   # 매시간 정각(UTC)
+    - cron: "0 */2 * * *"   # Ever xxx hours (UTC)
   workflow_dispatch: {}
 
 jobs:
