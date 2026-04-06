@@ -71,6 +71,9 @@ class CLCaseSummary:
     recent_updates: str
     extracted_causes: str
     extracted_ai_snippet: str
+    date_filed: str = "미확인"
+    plaintiff: str = "미확인"
+    defendant: str = "미확인"
 
 
 # =====================================================
@@ -725,6 +728,18 @@ def build_case_summary_from_docket_id(docket_id: int) -> Optional[CLCaseSummary]
     else:
         debug_log("No complaint_link available — skipping PDF extraction")
 
+    # 5️⃣ 원고/피고 추출 (case_name에서 파싱)
+    plaintiff = "미확인"
+    defendant = "미확인"
+    if " v. " in case_name:
+        parts = case_name.split(" v. ", 1)
+        plaintiff = parts[0].strip()
+        defendant = parts[1].strip()
+    elif " vs. " in case_name:
+        parts = case_name.split(" vs. ", 1)
+        plaintiff = parts[0].strip()
+        defendant = parts[1].strip()
+
     return CLCaseSummary(
         docket_id=docket_id,
         case_name=case_name,
@@ -742,5 +757,8 @@ def build_case_summary_from_docket_id(docket_id: int) -> Optional[CLCaseSummary]
         recent_updates=recent_updates,
         extracted_causes=extracted_causes,
         extracted_ai_snippet=extracted_ai_snippet,
+        date_filed=date_filed,
+        plaintiff=plaintiff,
+        defendant=defendant,
     )
 

@@ -3,6 +3,9 @@ from typing import List
 from collections import Counter
 import re
 import copy
+import csv
+import io
+from datetime import datetime
 from .extract import Lawsuit
 from .courtlistener import CLDocument, CLCaseSummary
 from .utils import debug_log, slugify_case_name
@@ -24,38 +27,35 @@ def _md_sep(col_count: int) -> str:
 def _get_data_icon(text: str) -> str:
     """
     대상 데이터/정보의 성격에 따른 적정 아이콘을 반환합니다.
+    (텍스트, 오디오, 이미지, 비디오, 센서, 3D Model, 기타)
     """
     h = (text or "").lower()
     
-    # 1. 음악/오디오
+    # 1. 오디오
     if any(k in h for k in ["music", "lyrics", "audio", "song", "musical", "singer", "artist", "record", "spotify", "warner", "sony", "universal"]):
         return "🎵"
     
-    # 2. 이미지/예술
+    # 2. 이미지
     if any(k in h for k in ["image", "photo", "picture", "art", "style", "drawing", "illustration", "artwork", "photographer", "getty", "deviantart", "midjourney", "stable diffusion", "stock"]):
         return "🖼️"
     
-    # 3. 비디오/영상
+    # 3. 비디오
     if any(k in h for k in ["video", "youtube", "movie", "film", "netflix", "vimeo", "motion picture"]):
         return "🎥"
-    
-    # 4. 뉴스/언론
-    if any(k in h for k in ["news", "article", "journalism", "publisher", "times", "newspaper", "press", "media", "reporting"]):
-        return "📰"
-    
-    # 5. 도서/텍스트
-    if any(k in h for k in ["book", "novel", "text", "library", "shadow library", "pirat", "books3", "author", "writing", "prose", "literary"]):
-        return "📚"
-    
-    # 6. 코드/소프트웨어
-    if any(k in h for k in ["code", "software", "programming", "github", "source code", "developer", "copilot", "git"]):
-        return "💻"
-    
-    # 7. AI/모델 (일반)
-    if any(k in h for k in ["openai", "gpt", "anthropic", "claude", "llama", "meta", "google", "gemini", "generative ai"]):
-        return "🤖"
+        
+    # 4. 텍스트
+    if any(k in h for k in ["book", "novel", "text", "library", "shadow library", "pirat", "books3", "author", "writing", "prose", "literary", "news", "article", "journalism", "publisher", "times", "newspaper", "press", "media", "reporting", "code", "software", "programming", "github", "source code", "developer", "copilot", "git"]):
+        return "📝"
 
-    return "⚖️"  # 기본 아이콘 (법률)
+    # 5. 센서
+    if any(k in h for k in ["sensor", "iot", "detector", "radar", "lidar", "telemetry"]):
+        return "📡"
+
+    # 6. 3D Model
+    if any(k in h for k in ["3d", "model", "cad", "mesh", "stl", "obj", "unity", "unreal", "blender"]):
+        return "🧊"
+
+    return "❗"  # 기타 (느낌표)
 
 
 def _mdlink(label: str, url: str) -> str:
@@ -448,4 +448,80 @@ def render_markdown(
 
     lines.append("</details>\n")
 
-    return "\n".join(lines) or ""
+
+def _get_data_category(text: str) -> str:
+    """대상 데이터의 카테고리를 텍스트 기반으로 추정합니다."""
+    h = (text or "").lower()
+    if any(k in h for k in ["music", "lyrics", "audio", "song", "musical"]): return "오디오"
+    if any(k in h for k in ["image", "photo", "picture", "art", "drawing", "illustration"]): return "이미지"
+    if any(k in h for k in ["video", "youtube", "movie", "film"]): return "비디오"
+    if any(k in h for k in ["sensor", "iot", "detector", "radar", "lidar"]): return "센서"
+    if any(k in h for k in ["3d", "model", "cad", "mesh", "stl"]): return "3D Model"
+    if any(k in h for k in ["book", "novel", "text", "news", "article", "code", "software"]): return "텍스트"
+    return "기타"
+
+def render_csv(
+    lawsuits: List[Lawsuit],
+    cl_cases: List[CLCaseSummary],
+    run_ts: str
+) -> str:
+    """
+    사용자 요청에 따른 'After' 포맷의 CSV 결과물을 생성합니다.
+    """
+    output = io.StringIO()
+    
+    # 1. Header (메타 정보)
+    # AI 데이터 소송 현황,,,,,,,,,,,,,,,,,,,,,, (22 commas -> 23 cols)
+    # 추출기간 : ... ,,,,,,,,,,,,,,,,,,,,,, (22 commas -> 23 cols)
+    output.write("AI 데이터 소송 현황" + "," * 22 + "\n")
+    output.write(f"추출기간 : 2025-06-27 17:34 ~ {run_ts}" + "," * 22 + "\n")
+    
+    # 컬럼 정의
+    headers = [
+        "No", "System ID", "진행현황", "소송제목 (원고 v. 피고)*", "소송번호*", "소송제기일*",
+        "원고", "피고", "대상 데이터", "대상 제품", "소송이유", "법원", "국가*", "소송금액 (USD)",
+        "개요 및 배경 (By Gauss)", "Tracker(업로드 시 제외)", "관련 주소 (초기)(업로드 시 제외)",
+        "Last Update(업로드 시 제외)", "진행결과", "히스토리(업로드 시 제외)",
+        "변호사(원고)", "변호사(피고)", "비고(업로드 시 제외)"
+    ]
+    
+    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(headers)
+    
+    row_count = 1
+    
+    # RECAP Cases 먼저 (데이터가 더 풍부함)
+    for c in cl_cases:
+        # 데이터 카테고리 추정
+        search_text = f"{c.case_name} {c.nature_of_suit} {c.cause} {c.extracted_causes} {c.extracted_ai_snippet}"
+        data_cat = _get_data_category(search_text)
+        
+        row = [
+            row_count,
+            c.docket_id,
+            c.status,
+            c.case_name,
+            c.docket_number,
+            c.date_filed,
+            c.plaintiff,
+            c.defendant,
+            data_cat,
+            "",  # 대상 제품 (추출 어려움으로 공란)
+            c.extracted_causes if c.extracted_causes != "미확인" else c.cause,
+            c.court_short_name or c.court,
+            "미국", # 기본값
+            "",  # 소송금액
+            c.extracted_ai_snippet, # 개요 및 배경 위치에 스니펫 배치
+            f"https://www.courtlistener.com/docket/{c.docket_id}/", # Tracker
+            c.complaint_link, # 관련 주소
+            c.recent_updates, # Last Update
+            "",  # 진행결과
+            "",  # 히스토리
+            "",  # 변호사(원고)
+            "",  # 변호사(피고)
+            ""   # 비고
+        ]
+        writer.writerow(row)
+        row_count += 1
+        
+    return output.getvalue()
