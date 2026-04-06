@@ -446,6 +446,8 @@ def render_markdown(
 
     lines.append("</details>\n")
 
+    return "\n".join(lines)
+
 
 def _get_data_category(text: str) -> str:
     """대상 데이터의 카테고리를 텍스트 기반으로 추정합니다."""
