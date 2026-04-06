@@ -104,6 +104,16 @@ def main() -> None:
     
     recap_doc_count = len(unique_dockets_with_docs)
 
+    # =====================================================
+    # NEW: DEBUG 모드 및 데이터 유무에 따른 실행 구조 개선
+    # - DEBUG=1: 데이터가 없어도 항상 출력 (디버깅용)
+    # - DEBUG=0 (기본): 데이터(News, Cases)가 모두 0건이면 출력/통지 건너뜀
+    # =====================================================
+    is_debug = os.environ.get("DEBUG") == "1"
+    if not is_debug and len(lawsuits) == 0 and docket_case_count == 0:
+        debug_log(f"데이터가 없으며 DEBUG=0이므로 리포트 생성 및 전송을 건너뜁니다. (News: 0, Cases: 0)")
+        return
+
     # 3) 렌더링
     md = render_markdown(
         lawsuits,
