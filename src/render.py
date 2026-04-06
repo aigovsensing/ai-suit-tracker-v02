@@ -21,6 +21,43 @@ def _md_sep(col_count: int) -> str:
     return "|" + "---|" * col_count
 
 
+def _get_data_icon(text: str) -> str:
+    """
+    대상 데이터/정보의 성격에 따른 적정 아이콘을 반환합니다.
+    """
+    h = (text or "").lower()
+    
+    # 1. 음악/오디오
+    if any(k in h for k in ["music", "lyrics", "audio", "song", "musical", "singer", "artist", "record", "spotify", "warner", "sony", "universal"]):
+        return "🎵"
+    
+    # 2. 이미지/예술
+    if any(k in h for k in ["image", "photo", "picture", "art", "style", "drawing", "illustration", "artwork", "photographer", "getty", "deviantart", "midjourney", "stable diffusion", "stock"]):
+        return "🖼️"
+    
+    # 3. 비디오/영상
+    if any(k in h for k in ["video", "youtube", "movie", "film", "netflix", "vimeo", "motion picture"]):
+        return "🎥"
+    
+    # 4. 뉴스/언론
+    if any(k in h for k in ["news", "article", "journalism", "publisher", "times", "newspaper", "press", "media", "reporting"]):
+        return "📰"
+    
+    # 5. 도서/텍스트
+    if any(k in h for k in ["book", "novel", "text", "library", "shadow library", "pirat", "books3", "author", "writing", "prose", "literary"]):
+        return "📚"
+    
+    # 6. 코드/소프트웨어
+    if any(k in h for k in ["code", "software", "programming", "github", "source code", "developer", "copilot", "git"]):
+        return "💻"
+    
+    # 7. AI/모델 (일반)
+    if any(k in h for k in ["openai", "gpt", "anthropic", "claude", "llama", "meta", "google", "gemini", "generative ai"]):
+        return "🤖"
+
+    return "⚖️"  # 기본 아이콘 (법률)
+
+
 def _mdlink(label: str, url: str) -> str:
     label = _esc(label)
     url = (url or "").strip()
@@ -187,7 +224,10 @@ def render_markdown(
                 slug = _slugify_case_name(c.case_name)
                 docket_url = f"https://www.courtlistener.com/docket/{c.docket_id}/{slug}/"
                 
-                full_title = f"({idx}) {update_date or '미확인'}, {c.case_name}"
+                # 데이터 성격에 따른 아이콘 결정
+                icon = _get_data_icon(f"{c.case_name} {c.nature_of_suit} {c.cause} {c.extracted_causes} {c.extracted_ai_snippet}")
+                
+                full_title = f"{icon} ({idx}) {update_date or '미확인'}, {c.case_name}"
                 lines.append(f"**{_mdlink(full_title, docket_url)}**")
                 
                 # Nature (820 Copyright 강조)
@@ -227,7 +267,9 @@ def render_markdown(
 
         for idx, (risk_score, keywords, s) in enumerate(scored_lawsuits, start=1):
             article_url = s.article_urls[0] if getattr(s, "article_urls", None) else ""
-            title_cell = _mdlink(s.article_title or s.case_title, article_url)
+            # 데이터 성격에 따른 아이콘 결정
+            icon = _get_data_icon(f"{s.article_title} {s.case_title} {s.reason}")
+            title_cell = f"{icon} " + _mdlink(s.article_title or s.case_title, article_url)
 
             keyword_display = "<br>".join(keywords) if keywords else "-"
 
@@ -321,10 +363,13 @@ def render_markdown(
                 if (c.nature_of_suit or "").strip() == "820 Copyright":
                     nature_display = '⚠️**820 Copyright**'
 
+                # 데이터 성격에 따른 아이콘 결정
+                icon = _get_data_icon(f"{c.case_name} {c.nature_of_suit} {c.cause} {extracted_causes} {extracted_ai_snippet}")
+                
                 lines.append(
                     f"| {idx} | "
                     f"{_esc(c.status)} | "
-                    f"{_mdlink(c.case_name, docket_url)} | "
+                    f"{icon} {_mdlink(c.case_name, docket_url)} | "
                     f"{_mdlink(c.docket_number, docket_url)} | "
                     f"{nature_display} | "
                     f"{format_risk(score)} | "
