@@ -126,21 +126,15 @@ def main() -> None:
 
 
     # 4) GitHub Issue 작업
-    debug_log(f"GitHub 이슈 작업 시작: {issue_title}")
     issue_no = find_or_create_issue(owner, repo, gh_token, issue_title, issue_label)
+
     issue_url = f"https://github.com/{owner}/{repo}/issues/{issue_no}"
-    debug_log(f"GitHub 이슈 확보 완료: #{issue_no}")
 
     # =========================================================
     # Baseline 비교 로직 (Modularized)
     # =========================================================
-    debug_log("이전 댓글 목록 조회 시작")
     comments = list_comments(owner, repo, gh_token, issue_no)
-    debug_log(f"이전 댓글 목록 조회 완료: {len(comments)}건")
-    
-    debug_log("중복 제거(Deduplication) 적용 시작")
     md = apply_deduplication(md, comments)
-    debug_log("중복 제거 적용 완료")
     
     # 실행 시각(KST)을 최상단에 배치 (중복 제거 요약보다 위에 오도록)
     md = f"### 실행 시각(KST): {run_ts_kst}\n\n" + md
@@ -263,12 +257,4 @@ def main() -> None:
         debug_log(f"Slack 전송 실패: {e}")
         
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        import traceback
-        from src.utils import debug_log
-        debug_log(f"CRITICAL ERROR: {type(e).__name__}: {e}")
-        debug_log(traceback.format_exc())
-        import sys
-        sys.exit(1)
+    main()
