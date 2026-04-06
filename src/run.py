@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from .fetch import fetch_news
 from .extract import load_known_cases, build_lawsuits_from_news
-from .render import render_markdown, render_csv
+from .render import render_markdown
 from .github_issue import find_or_create_issue, create_comment, close_other_daily_issues
 from .github_issue import list_comments
 from .slack import post_to_slack
@@ -123,11 +123,7 @@ def main() -> None:
         lookback_days=lookback_days,
     )
 
-    # 3-1) CSV 렌더링 및 저장
-    csv_str = render_csv(lawsuits, cl_cases, run_ts_kst)
-    with open("litigation_report.csv", "w", encoding="utf-8-sig") as f:
-        f.write(csv_str)
-    debug_log(f"CSV 리포트 저장 완료: litigation_report.csv ({len(cl_cases)}건)")
+
 
     # 4) GitHub Issue 작업
     issue_no = find_or_create_issue(owner, repo, gh_token, issue_title, issue_label)

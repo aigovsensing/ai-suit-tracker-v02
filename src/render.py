@@ -3,8 +3,6 @@ from typing import List
 from collections import Counter
 import re
 import copy
-import csv
-import io
 from datetime import datetime
 from .extract import Lawsuit
 from .courtlistener import CLDocument, CLCaseSummary
@@ -460,68 +458,4 @@ def _get_data_category(text: str) -> str:
     if any(k in h for k in ["book", "novel", "text", "news", "article", "code", "software"]): return "텍스트"
     return "기타"
 
-def render_csv(
-    lawsuits: List[Lawsuit],
-    cl_cases: List[CLCaseSummary],
-    run_ts: str
-) -> str:
-    """
-    사용자 요청에 따른 'After' 포맷의 CSV 결과물을 생성합니다.
-    """
-    output = io.StringIO()
-    
-    # 1. Header (메타 정보)
-    # AI 데이터 소송 현황,,,,,,,,,,,,,,,,,,,,,, (22 commas -> 23 cols)
-    # 추출기간 : ... ,,,,,,,,,,,,,,,,,,,,,, (22 commas -> 23 cols)
-    output.write("AI 데이터 소송 현황" + "," * 22 + "\n")
-    output.write(f"추출기간 : 2025-06-27 17:34 ~ {run_ts}" + "," * 22 + "\n")
-    
-    # 컬럼 정의
-    headers = [
-        "No", "System ID", "진행현황", "소송제목 (원고 v. 피고)*", "소송번호*", "소송제기일*",
-        "원고", "피고", "대상 데이터", "대상 제품", "소송이유", "법원", "국가*", "소송금액 (USD)",
-        "개요 및 배경 (By Gauss)", "Tracker(업로드 시 제외)", "관련 주소 (초기)(업로드 시 제외)",
-        "Last Update(업로드 시 제외)", "진행결과", "히스토리(업로드 시 제외)",
-        "변호사(원고)", "변호사(피고)", "비고(업로드 시 제외)"
-    ]
-    
-    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(headers)
-    
-    row_count = 1
-    
-    # RECAP Cases 먼저 (데이터가 더 풍부함)
-    for c in cl_cases:
-        # 데이터 카테고리 추정
-        search_text = f"{c.case_name} {c.nature_of_suit} {c.cause} {c.extracted_causes} {c.extracted_ai_snippet}"
-        data_cat = _get_data_category(search_text)
-        
-        row = [
-            row_count,
-            c.docket_id,
-            c.status,
-            c.case_name,
-            c.docket_number,
-            c.date_filed,
-            c.plaintiff,
-            c.defendant,
-            data_cat,
-            "",  # 대상 제품 (추출 어려움으로 공란)
-            c.extracted_causes if c.extracted_causes != "미확인" else c.cause,
-            c.court_short_name or c.court,
-            "미국", # 기본값
-            "",  # 소송금액
-            c.extracted_ai_snippet, # 개요 및 배경 위치에 스니펫 배치
-            f"https://www.courtlistener.com/docket/{c.docket_id}/", # Tracker
-            c.complaint_link, # 관련 주소
-            c.recent_updates, # Last Update
-            "",  # 진행결과
-            "",  # 히스토리
-            "",  # 변호사(원고)
-            "",  # 변호사(피고)
-            ""   # 비고
-        ]
-        writer.writerow(row)
-        row_count += 1
-        
-    return output.getvalue()
+
