@@ -5,7 +5,8 @@ permissions:
 
 on:
   schedule:
-    - cron: "0 * * * *"   # Every 1 hour (UTC)
+    - cron: "0 23,0-8 * * *"   # Business hours (KST 08:00-17:00, UTC 23:00-08:00) every 1 hour
+    - cron: "0 9-21/2 * * *"   # Off-business hours (KST 18:00-06:00, UTC 09:00-21:00) every 2 hours
   workflow_dispatch: {}
 
 jobs:
