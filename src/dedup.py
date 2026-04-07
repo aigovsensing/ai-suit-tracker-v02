@@ -53,12 +53,19 @@ def extract_article_url(cell: str) -> str | None:
         return m.group(1).split("&hl=")[0]
     return None
 
-def apply_deduplication(md: str, comments: List[dict]) -> str:
+def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
     """
     이전 GitHub 댓글들을 분석하여 중복된 데이터를 'skip' 처리하고 요약을 추가합니다.
     """
     if not comments:
-        return md
+        # 댓글이 없는 경우, 신규 데이터 개수는 md 내용을 분석해서 추출하거나
+        # (번거로우면) 일단 렌더링된 테이블의 행 수를 세어서라도 정확성을 기하는 것이 좋습니다.
+        # 여기서는 md에 포함된 News와 Case 테이브의 행 수를 파싱하여 넘겨줍니다.
+        news_section = extract_section(md, "## 📰 AI Suit News")
+        _, n_rows, _ = parse_table(news_section)
+        recap_section = extract_section(md, "## ⚖️ Cases")
+        _, c_rows, _ = parse_table(recap_section)
+        return md, len(n_rows), len(c_rows)
 
     # 1) Base Snapshot Key Set 생성 (모든 이전 댓글 대상)
     base_article_set: Set[str] = set()
@@ -179,7 +186,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> str:
         f"{new_cases_label}\n\n"
     )
 
-    return summary_header + current_md
+    return summary_header + current_md, new_article_count, new_docket_count
 
 
 def generate_consolidated_report(comments: List[dict]) -> str:

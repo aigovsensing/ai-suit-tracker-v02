@@ -134,8 +134,14 @@ def main() -> None:
     # Baseline 비교 로직 (Modularized)
     # =========================================================
     comments = list_comments(owner, repo, gh_token, issue_no)
-    md = apply_deduplication(md, comments)
+    md, new_news_count, new_cases_count = apply_deduplication(md, comments)
     
+    # 새로운 소식이 하나도 없는지 여부 확인
+    no_new_updates = (new_news_count == 0 and new_cases_count == 0)
+
+    if no_new_updates:
+        md = "새로운 소식들이 없습니다."
+
     # 실행 시각(KST)을 최상단에 배치 (중복 제거 요약보다 위에 오도록)
     md = f"### 실행 시각(KST): {run_ts_kst}\n\n" + md
 
@@ -201,57 +207,64 @@ def main() -> None:
 
 
 
-    slack_lines = []
+    if no_new_updates:
+        # 새로운 소식이 없는 경우 아주 간단하게 전송
+        slack_body = "새로운 소식들이 없습니다."
+    else:
+        slack_lines = []
 
-    slack_lines.append(":bar_chart: AI 소송 모니터링")
-    slack_lines.append(f"🕒 {timestamp}")
-    slack_lines.append("")
-
-    # 🔁 Dedup Summary
-    if slack_dedup_news and slack_dedup_cases:
-        slack_lines.append(":arrows_counterclockwise: Dedup Summary")
-        slack_lines.append(f"└ News {slack_dedup_news}")
-        slack_lines.append(f"└ Cases {slack_dedup_cases}")
+        slack_lines.append(":bar_chart: AI 소송 모니터링")
+        slack_lines.append(f"🕒 {timestamp}")
         slack_lines.append("")
 
-    # 📈 Collection Status
-    slack_lines.append(":chart_with_upwards_trend: Collection Status")
-    slack_lines.append(f"└ News: {len(lawsuits)}")
-    slack_lines.append(
-        f"└ Cases: {docket_case_count} (Docs: {recap_doc_count})"
-    )
-    slack_lines.append("")
+        # 🔁 Dedup Summary
+        if slack_dedup_news and slack_dedup_cases:
+            slack_lines.append(":arrows_counterclockwise: Dedup Summary")
+            slack_lines.append(f"└ News {slack_dedup_news}")
+            slack_lines.append(f"└ Cases {slack_dedup_cases}")
+            slack_lines.append("")
 
-    # 🔗 GitHub
-    slack_lines.append(f":link: GitHub: <{issue_url}|#{issue_no}>")
-
-    # 🆕 최신 RECAP 문서 (820 Copyright) - Top 3
-    copyright_cases = []
-    for c in cl_cases:
-        nos = str(c.nature_of_suit or "").strip()
-        if "820" in nos or "copyright" in nos.lower():
-            copyright_cases.append(c)
-
-    top_cases = sorted(
-        copyright_cases,
-        key=lambda x: x.recent_updates if x.recent_updates != "미확인" else "",
-        reverse=True
-    )[:3]
-
-    if top_cases:
+        # 📈 Collection Status
+        slack_lines.append(":chart_with_upwards_trend: Collection Status")
+        slack_lines.append(f"└ News: {len(lawsuits)}")
+        slack_lines.append(
+            f"└ Cases: {docket_case_count} (Docs: {recap_doc_count})"
+        )
         slack_lines.append("")
-        slack_lines.append(":new: 최신 RECAP 문서 (820 Copyright)")
 
-        for c in top_cases:
-            date = c.recent_updates if c.recent_updates != "미확인" else "N/A"
-            name = c.case_name
-            # slug 생성 (utils의 공통 함수 사용)
-            slug = slugify_case_name(name)
-            docket_url = f"https://www.courtlistener.com/docket/{c.docket_id}/{slug}/"
-            
-            slack_lines.append(f"• {date} | <{docket_url}|{name}>")
+        # 🔗 GitHub
+        slack_lines.append(f":link: GitHub: <{issue_url}|#{issue_no}>")
+
+        # 🆕 최신 RECAP 문서 (820 Copyright) - Top 3
+        copyright_cases = []
+        for c in cl_cases:
+            nos = str(c.nature_of_suit or "").strip()
+            if "820" in nos or "copyright" in nos.lower():
+                copyright_cases.append(c)
+
+        top_cases = sorted(
+            copyright_cases,
+            key=lambda x: x.recent_updates if x.recent_updates != "미확인" else "",
+            reverse=True
+        )[:3]
+
+        if top_cases:
+            slack_lines.append("")
+            slack_lines.append(":new: 최신 RECAP 문서 (820 Copyright)")
+
+            for c in top_cases:
+                date = c.recent_updates if c.recent_updates != "미확인" else "N/A"
+                name = c.case_name
+                # slug 생성 (utils의 공통 함수 사용)
+                slug = slugify_case_name(name)
+                docket_url = f"https://www.courtlistener.com/docket/{c.docket_id}/{slug}/"
+                
+                slack_lines.append(f"• {date} | <{docket_url}|{name}>")
+        
+        slack_body = "\n".join(slack_lines)
+
     try:
-        post_to_slack(slack_webhook, "\n".join(slack_lines))
+        post_to_slack(slack_webhook, slack_body)
         debug_log(f"Slack 전송 완료")
     except Exception as e:
         debug_log(f"Slack 전송 실패: {e}")
