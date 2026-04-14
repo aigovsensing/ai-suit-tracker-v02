@@ -3,9 +3,8 @@ import feedparser
 from dataclasses import dataclass
 from typing import List
 from datetime import datetime, timezone
-from dateutil import parser as dtparser
 from .queries import NEWS_QUERIES
-from .utils import debug_log
+from .utils import debug_log, parse_dt
 
 GOOGLE_NEWS_RSS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
@@ -15,17 +14,6 @@ class NewsItem:
     url: str
     published_at: datetime | None
     source: str
-
-def _parse_dt(s: str | None) -> datetime | None:
-    if not s:
-        return None
-    try:
-        dt = dtparser.parse(s)
-        if not dt.tzinfo:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    except Exception:
-        return None
 
 def fetch_news() -> List[NewsItem]:
     items: List[NewsItem] = []
@@ -40,7 +28,7 @@ def fetch_news() -> List[NewsItem]:
         for e in feed.entries:
             title = getattr(e, "title", "").strip()
             link = getattr(e, "link", "").strip()
-            published = _parse_dt(getattr(e, "published", None))
+            published = parse_dt(getattr(e, "published", None))
             source = ""
             if hasattr(e, "source") and e.source:
                 source = getattr(e.source, "title", "") or ""

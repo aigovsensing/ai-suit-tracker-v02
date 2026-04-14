@@ -6,7 +6,8 @@ from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from typing import List, Dict, Any
 from datetime import datetime, timezone, timedelta
-from .utils import debug_log
+from .utils import debug_log, parse_dt
+import json
 
 CASE_NO_PATTERNS = [
     re.compile(r"\b\d:\d{2}-cv-\d{5}\b", re.IGNORECASE),
@@ -26,8 +27,8 @@ class Lawsuit:
     article_urls: List[str]
 
 
-def fetch_page_text(url: str, timeout: int = 15) -> tuple[str, str]:
-    """기사 페이지 텍스트를 가져오고 (텍스트, 최종URL)을 반환한다.
+def fetch_page_text(url: str, timeout: int = 15) -> tuple[str, str, BeautifulSoup | None]:
+    """기사 페이지 텍스트를 가져오고 (텍스트, 최종URL, soup)을 반환한다.
 
     - Google News RSS 링크는 최종 매체 URL로 리다이렉트되는 경우가 많아,
       allow_redirects=True로 최종 URL을 확보해 기사 주소 출력/후속 분석 정확도를 높인다.
@@ -38,15 +39,63 @@ def fetch_page_text(url: str, timeout: int = 15) -> tuple[str, str]:
         r.raise_for_status()
         final_url = (r.url or url).strip()
         soup = BeautifulSoup(r.text, "lxml")
-        for tag in soup(["script", "style", "noscript"]):
+        
+        # 텍스트 추출용 복사본 (원본 soup은 날짜 추출 등에 사용 위해 보존)
+        soup_copy = BeautifulSoup(r.text, "lxml")
+        for tag in soup_copy(["script", "style", "noscript"]):
             tag.decompose()
-        text = soup.get_text("\n")
+        text = soup_copy.get_text("\n")
         text = re.sub(r"[ \t]+", " ", text)
         text = re.sub(r"\n{3,}", "\n\n", text)
-        return text[:20000], final_url
+        return text[:20000], final_url, soup
     except Exception as e:
         debug_log(f"fetch_page_text failed: {url}, error: {e}")
-        return "", url
+        return "", url, None
+
+def extract_publication_date(soup: BeautifulSoup | None) -> datetime | None:
+    """HTML의 메타 태그나 JSON-LD 등에서 기사 발행일을 추출합니다."""
+    if not soup:
+        return None
+    
+    # 1. Open Graph / Article meta tags
+    # article:published_time, published_at, date, etc.
+    properties = ["article:published_time", "og:article:published_time", "publication_date", "publish-date"]
+    for prop in properties:
+        meta = soup.find("meta", property=prop) or soup.find("meta", attrs={"name": prop})
+        if meta and meta.get("content"):
+            dt = parse_dt(meta["content"])
+            if dt: return dt
+
+    # 2. JSON-LD
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            data = json.loads(script.string)
+            if isinstance(data, list):
+                # 리스트인 경우 각 항목 확인
+                for item in data:
+                    if isinstance(item, dict) and "datePublished" in item:
+                        dt = parse_dt(item["datePublished"])
+                        if dt: return dt
+            elif isinstance(data, dict):
+                # 단일 객체이거나 @graph 내부 확인
+                if "datePublished" in data:
+                    dt = parse_dt(data["datePublished"])
+                    if dt: return dt
+                if "@graph" in data:
+                    for item in data["@graph"]:
+                        if isinstance(item, dict) and "datePublished" in item:
+                            dt = parse_dt(item["datePublished"])
+                            if dt: return dt
+        except Exception:
+            continue
+
+    # 3. <time> tag
+    time_tag = soup.find("time")
+    if time_tag and time_tag.get("datetime"):
+        dt = parse_dt(time_tag["datetime"])
+        if dt: return dt
+    
+    return None
 
 def load_known_cases(path: str = "data/known_cases.yml") -> List[Dict[str, Any]]:
     try:
@@ -169,7 +218,7 @@ def build_lawsuits_from_news(news_items, known_cases, lookback_days: int = 3) ->
     for item in news_items:
         if item.published_at and item.published_at < cutoff:
             continue
-        text, final_url = fetch_page_text(item.url)
+        text, final_url, soup = fetch_page_text(item.url)
         if not text:
             continue
 
@@ -188,7 +237,14 @@ def build_lawsuits_from_news(news_items, known_cases, lookback_days: int = 3) ->
         if case_title == "미확인":
             case_title = guess_case_title_from_article_title(article_title)
 
-        published = item.published_at or datetime.now(timezone.utc)
+        # 2) 날짜 처리: 웹페이지에서 추출한 날짜 우선, 없으면 RSS 날짜 사용
+        web_date = extract_publication_date(soup)
+        if web_date:
+            published = web_date
+            debug_log(f"Using web extracted date: {published} for {article_title[:40]}")
+        else:
+            published = item.published_at or datetime.now(timezone.utc)
+        
         update_date = published.date().isoformat()
 
         results.append(
