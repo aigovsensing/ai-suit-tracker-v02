@@ -141,9 +141,9 @@ def main() -> None:
 
     if no_new_updates:
         md = "새로운 소식들이 없습니다."
-
-    # 실행 시각(KST)을 최상단에 배치 (중복 제거 요약보다 위에 오도록)
-    md = f"### 실행 시각(KST): {run_ts_kst}\n\n" + md
+    else:
+        # 실행 시각(KST)을 최상단에 배치 (중복 제거 요약보다 위에 오도록)
+        md = f"### 실행 시각(KST): {run_ts_kst}\n\n" + md
 
     # 이전 날짜 이슈 Close
     closed_nums = close_other_daily_issues(owner, repo, gh_token, issue_label, base_title, issue_title, issue_no, issue_url)
