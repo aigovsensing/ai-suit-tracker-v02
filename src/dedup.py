@@ -23,7 +23,14 @@ def extract_section(md_text: str, section_title: str) -> str:
 
 def parse_table(section_md: str) -> Tuple[List[str], List[List[str]], Tuple[str, str]]:
     """Markdown 테이블을 헤더, 행 데이터, 메타데이터(헤더/구분선 라인)로 파싱합니다."""
-    lines = [l for l in section_md.split("\n") if l.strip().startswith("|")]
+    all_lines = section_md.split("\n")
+    lines = []
+    for l in all_lines:
+        if l.strip().startswith("|"):
+            lines.append(l)
+        elif lines:
+            break
+
     if len(lines) < 3:
         return [], [], ("", "")
 
@@ -91,6 +98,16 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
             idx = h_cases.index("도켓번호")
             for r in r_cases:
                 base_docket_set.add(r[idx])
+
+        # Docs 처리
+        docs_section_base = extract_section(body, "📄 Cases: 법원 문서 기반")
+        h_docs, r_docs, _ = parse_table(docs_section_base)
+        if "법원 문서" in h_docs:
+            idx = h_docs.index("법원 문서")
+            for r in r_docs:
+                url = extract_article_url(r[idx])
+                if url:
+                    base_docket_set.add(url) # 기사 URL set과 별개로 docket set에 문서 URL도 저장 (또는 별도 set 사용 가능하나 여기서는 편의상 통합 관리 혹은 별도 set 권장)
 
     # 2) 현재 Markdown 처리 (News - 새 이름 사용)
     current_md = md
@@ -166,14 +183,44 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
             new_recap_section = "\n".join(new_lines)
         current_md = current_md.replace(recap_section, new_recap_section)
 
+    # 3.5) 법원 문서(Docs) 처리
+    docs_section = extract_section(current_md, "📄 Cases: 법원 문서 기반")
+    d_headers, d_rows, d_table_meta = parse_table(docs_section)
+    new_doc_count = 0
+    if d_headers and "법원 문서" in d_headers:
+        url_idx = d_headers.index("법원 문서")
+        header_line, separator_line = d_table_meta
+        non_skip_rows = []
+        for r in d_rows:
+            url = extract_article_url(r[url_idx])
+            if url in base_docket_set: # 위에서 문서 URL도 여기에 담았다고 가정
+                continue
+            else:
+                non_skip_rows.append(r)
+                new_doc_count += 1
+        
+        if new_doc_count == 0:
+            new_docs_section = "새로운 법원 문서가 0건입니다.\n"
+        else:
+            new_lines = [header_line, separator_line]
+            for row_idx, r in enumerate(non_skip_rows, start=1):
+                # No. 업데이트 (만약 있으면)
+                if "No." in d_headers:
+                    r[d_headers.index("No.")] = str(row_idx)
+                new_lines.append("| " + " | ".join(r) + " |")
+            new_docs_section = "\n".join(new_lines) + "\n"
+        
+        current_md = current_md.replace(docs_section, new_docs_section)
+
     # 4) 중복 제거 요약 생성
     base_news = len(base_article_set)
-    base_cases = len(base_docket_set)
+    base_cases = len(base_docket_set) # 사실 여기엔 docket + doc urls가 섞여있음
     dup_news = total_article_count - new_article_count
     dup_cases = total_docket_count - new_docket_count
 
     new_news_label = f"**{new_article_count} (New)**" + (" 🔴" if new_article_count > 0 else "")
     new_cases_label = f"**{new_docket_count} (New)**" + (" 🔴" if new_docket_count > 0 else "")
+    new_docs_label = f"**{new_doc_count} (New)**" + (" 🔴" if new_doc_count > 0 else "")
 
     summary_header = (
         "### 중복 제거 요약:\n"
@@ -183,10 +230,11 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         f"{new_news_label}\n"
         f"└ Cases {base_cases} (Baseline): "
         f"{dup_cases} (Dup), "
-        f"{new_cases_label}\n\n"
+        f"{new_cases_label}\n"
+        f"└ Docs: {new_docs_label}\n\n"
     )
 
-    return summary_header + current_md, new_article_count, new_docket_count
+    return summary_header + current_md, new_article_count, new_docket_count + new_doc_count
 
 
 def generate_consolidated_report(comments: List[dict]) -> str:
