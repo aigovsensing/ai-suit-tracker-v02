@@ -134,10 +134,10 @@ def main() -> None:
     # Baseline 비교 로직 (Modularized)
     # =========================================================
     comments = list_comments(owner, repo, gh_token, issue_no)
-    md, new_news_count, new_cases_count = apply_deduplication(md, comments)
+    md, new_news_count, new_cases_count, new_docs_count = apply_deduplication(md, comments)
     
     # 새로운 소식이 하나도 없는지 여부 확인
-    no_new_updates = (new_news_count == 0 and new_cases_count == 0)
+    no_new_updates = (new_news_count == 0 and new_cases_count == 0 and new_docs_count == 0)
 
     if no_new_updates:
         md = "새로운 소식들이 없습니다."
