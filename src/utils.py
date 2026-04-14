@@ -1,5 +1,7 @@
 import os
 import re
+from datetime import datetime, timezone
+from dateutil import parser as dtparser
 
 def debug_log(msg: str):
     """
@@ -18,3 +20,14 @@ def slugify_case_name(name: str) -> str:
     name = re.sub(r"\s+", "-", name)
     name = re.sub(r"-+", "-", name)
     return name.strip("-")
+
+def parse_dt(s: str | None) -> datetime | None:
+    if not s:
+        return None
+    try:
+        dt = dtparser.parse(s)
+        if not dt.tzinfo:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        return None
