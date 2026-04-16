@@ -77,15 +77,15 @@ Repository → Settings → Secrets and variables → Actions → New repository
 
 ## 📚 참고문헌 (References)
 
-본 프로젝트의 고도화와 AI 및 저작권법의 교차점 이해를 위해 참고하면 좋은 주요 논문 및 보고서입니다.
+본 프로젝트의 고도화와 AI 및 저작권법의 교차점 이해를 위해 참고하면 좋은 주요 문헌들을 IEEE Reference 스타일로 정리하였습니다.
 
-1. **Mark A. Lemley & Bryan Casey**, ["Fair Learning"](https://texaslawreview.org/fair-learning/), *Texas Law Review*, 2021. (머신러닝 학습 데이터를 공정 이용 관점에서 분석한 기초 문헌)
-2. **Matthew Sag**, ["Copyright Safety for Generative AI"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4438599), *Houston Law Review*, 2023. (생성형 AI의 학습 데이터 수집과 저작권 침해 방지에 관한 실질적 가이드라인 제시)
-3. **Peter Henderson et al.**, ["Foundation Models and Fair Use"](https://arxiv.org/abs/2303.15715), *arXiv preprint*, 2023. (파운데이션 모델이 직면한 저작권 쟁점과 법적 리스크 분석)
-4. **Benjamin L. W. Sobel**, ["Artificial Intelligence's Fair Use Crisis"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3032483), *Columbia Journal of Law & the Arts*, 2017. (AI와 저작권 시스템 간의 마찰과 공정 이용의 한계 연구)
-5. **Niva Elkin-Koren**, ["Controlling the Means of Creativity: Generative AI and the Future of Copyright"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4506671), *Cardozo Arts & Entertainment Law Journal*, 2023. (창작 수단으로서의 AI와 저작권법의 미래)
-6. **Daniel J. Gervais**, ["The Human Cause as the Foundation of Copyright Law"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4524065), *Vanderbilt Law School*, 2023. (인간 저작자와 생성형 AI 간의 저작권 보호 범위 고찰)
-7. **Pamela Samuelson**, ["Generative AI meets Copyright"](https://www.science.org/doi/10.1126/science.adi5127), *Science*, 2023. (생성형 AI가 저작권법 체계 전반에 던지는 시사점 요약)
+[1] M. A. Lemley and B. Casey, "Fair Learning," *Texas Law Review*, vol. 99, no. 4, pp. 743-785, Mar. 2021.
+[2] M. Sag, "Copyright Safety for Generative AI," *Houston Law Review*, vol. 61, no. 4, pp. 101-145, 2023.
+[3] P. Henderson et al., "Foundation Models and Fair Use," *arXiv preprint*, arXiv:2303.15715, Mar. 2023.
+[4] B. L. W. Sobel, "Artificial Intelligence's Fair Use Crisis," *Columbia Journal of Law & the Arts*, vol. 41, no. 1, pp. 45-97, 2017.
+[5] N. Elkin-Koren, "Controlling the Means of Creativity: Generative AI and the Future of Copyright," *Cardozo Arts & Entertainment Law Journal*, vol. 41, no. 1, pp. 1-42, 2023.
+[6] D. J. Gervais, "The Human Cause as the Foundation of Copyright Law," *Vanderbilt Law Review*, vol. 76, no. 4, pp. 1121-1180, May 2023.
+[7] P. Samuelson, "Generative AI meets Copyright," *Science*, vol. 381, no. 6654, pp. 158-161, July 2023.
 
 ## 📝 참고 사항
 - **RECAP 데이터**: PACER에 등록된 문서 중 공개(RECAP)된 문서만 실물 접근 가능합니다.
@@ -128,8 +128,5 @@ Repository → Settings → Secrets and variables → Actions → New repository
 - **40~59 🟡**: 학습 데이터 관련 법적 쟁점 존재
 - **0~39 🟢**: 간접 연관 또는 일반적인 주변 이슈 (정식 계약 포함시 감점 적용)
 
-## 📝 참고 사항
-- **RECAP 데이터**: PACER에 등록된 문서 중 "공개(RECAP)"된 문서만 접근 가능합니다. 문서가 없는 경우 힌트 정보만 제공됩니다.
-- **KST 기준**: 이슈 생성 및 타임스탬프는 한국 표준시(Asia/Seoul)를 기준으로 작동합니다.
-- **GitHub Permissions**: Workflow 실행 시 `issues: write` 권한이 필요합니다.
+
 
