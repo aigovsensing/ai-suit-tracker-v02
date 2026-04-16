@@ -179,14 +179,17 @@ def render_markdown(
     lines: List[str] = []
 
     # KPI (간결 텍스트 요약)
-    lines.append(f"## 📊 최근 {lookback_days}일 소송 동향 요약")
+    lines.append("<details>")
+    lines.append(f"<summary><strong>## 📊 최근 {lookback_days}일 소송 동향 요약</strong></summary>\n")
     lines.append(f"└ 📰 News: {len(lawsuits)}")
-    lines.append(f"└ ⚖ Cases: {len(cl_cases)} (Docs: {recap_doc_count})\n")
+    lines.append(f"└ ⚖ Cases: {len(cl_cases)} (Docs: {recap_doc_count})")
+    lines.append("</details>\n")
 
     # Nature 통계
     if cl_cases:
         counter = Counter([c.nature_of_suit or "미확인" for c in cl_cases])
-        lines.append("## 📊 Nature of Suit 통계\n")
+        lines.append("<details>")
+        lines.append("<summary><strong>## 📊 Nature of Suit 통계</strong></summary>\n")
         lines.append("| Nature of Suit | 건수 |")
         lines.append("|---|---|")
         for k, v in counter.most_common(10):
@@ -194,7 +197,7 @@ def render_markdown(
         # 총 개수 추가
         total_count = sum(counter.values())
         lines.append(f"| **총개수** | **{total_count}** |")            
-        lines.append("")
+        lines.append("</details>\n")
 
     # AI 소송 Top3 (업데이트 날짜 기준)
     if cl_cases:
@@ -213,7 +216,8 @@ def render_markdown(
 
         if top_cases:
             debug_log(f"Rendering Top 3 Copyright cases: {len(top_cases)} found")
-            lines.append("## 🧠 최근 \"820 Copyright\" 소송 Top 3 (업데이트 날짜 기준)\n")
+            lines.append("<details>")
+            lines.append("<summary><strong>## 🧠 최근 \"820 Copyright\" 소송 Top 3 (업데이트 날짜 기준)</strong></summary>\n")
             
             for idx, c in enumerate(top_cases, start=1):
                 update_date = c.recent_updates if c.recent_updates != "미확인" else ""
@@ -245,6 +249,7 @@ def render_markdown(
                 else:
                     lines.append(f"   - **AI학습관련 핵심주장**: 미확인")
                 lines.append("")
+            lines.append("</details>\n")
         else:
             debug_log("No 820 Copyright cases found for Top 3 section.")
 
