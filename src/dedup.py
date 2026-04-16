@@ -53,6 +53,17 @@ def parse_table(section_md: str) -> Tuple[List[str], List[List[str]], Tuple[str,
 
     return header_cols, parsed_rows, (header, separator)
 
+def extract_article_title(cell: str) -> str:
+    """Markdown 링크 셀에서 제목 텍스트를 추출합니다."""
+    # 예: "📝 [Title](URL)" -> "Title"
+    m = re.search(r"\[([^\]]+)\]", cell)
+    if m:
+        return m.group(1).strip()
+    # 링크 형식이 아니면 아이콘 등을 제거하고 반환
+    t = cell.strip()
+    t = re.sub(r"^[^\w]+", "", t) # 앞쪽 특수문자/아이콘 제거
+    return t
+
 def extract_article_url(cell: str) -> str | None:
     """Markdown 링크 셀에서 URL을 추출합니다."""
     m = re.search(r"\((https?://[^\)]+)\)", cell)
@@ -65,9 +76,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
     이전 GitHub 댓글들을 분석하여 중복된 데이터를 'skip' 처리하고 요약을 추가합니다.
     """
     if not comments:
-        # 댓글이 없는 경우, 신규 데이터 개수는 md 내용을 분석해서 추출하거나
-        # (번거로우면) 일단 렌더링된 테이블의 행 수를 세어서라도 정확성을 기하는 것이 좋습니다.
-        # 여기서는 md에 포함된 News와 Case 테이브의 행 수를 파싱하여 넘겨줍니다.
+        # 댓글이 없는 경우 신규 데이터 정보 추출
         news_section = extract_section(md, "## 📰 AI Suit News")
         _, n_rows, _ = parse_table(news_section)
         recap_section = extract_section(md, "## ⚖️ Cases")
@@ -81,23 +90,25 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
     for comment in comments:
         body = comment.get("body") or ""
         
-        # News 처리 (오직 'AI Suit News'만 지원)
+        # News 처리 (제목 기준으로 체크)
         news_section_base = extract_section(body, "## 📰 AI Suit News")
         h_news, r_news, _ = parse_table(news_section_base)
         if "제목" in h_news:
             idx = h_news.index("제목")
             for r in r_news:
-                url = extract_article_url(r[idx])
-                if url:
-                    base_article_set.add(url)
+                title = extract_article_title(r[idx])
+                if title:
+                    base_article_set.add(title)
         
-        # Cases 처리
+        # Cases 처리 (도켓번호 기준으로 체크)
         recap_section_base = extract_section(body, "## ⚖️ Cases")
         h_cases, r_cases, _ = parse_table(recap_section_base)
         if "도켓번호" in h_cases:
             idx = h_cases.index("도켓번호")
             for r in r_cases:
-                base_docket_set.add(r[idx])
+                docket_key = extract_article_title(r[idx])
+                if docket_key:
+                    base_docket_set.add(docket_key)
 
         # Docs 처리
         docs_section_base = extract_section(body, "📄 Cases: 법원 문서 기반")
@@ -107,7 +118,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
             for r in r_docs:
                 url = extract_article_url(r[idx])
                 if url:
-                    base_docket_set.add(url) # 기사 URL set과 별개로 docket set에 문서 URL도 저장 (또는 별도 set 사용 가능하나 여기서는 편의상 통합 관리 혹은 별도 set 권장)
+                    base_docket_set.add(url) # 문서 URL도 중복 제거 대상에 포함
 
     # 2) 현재 Markdown 처리 (News - 새 이름 사용)
     current_md = md
@@ -127,9 +138,9 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         non_skip_rows = []
 
         for r in n_rows:
-            url = extract_article_url(r[title_idx])
-            if url in base_article_set:
-                debug_log(f"Skipping duplicate News: {r[title_idx]} ({url})")
+            title = extract_article_title(r[title_idx])
+            if title in base_article_set:
+                debug_log(f"Skipping duplicate News (based on Title): {title}")
             else:
                 non_skip_rows.append(r)
                 new_article_count += 1
@@ -164,9 +175,10 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         non_skip_rows = []
 
         for r in c_rows:
-            docket = r[docket_idx]
-            if docket in base_docket_set:
-                debug_log(f"Skipping duplicate Case: {r[case_idx]} ({docket})")
+            docket_val = r[docket_idx]
+            docket_key = extract_article_title(docket_val)
+            if docket_key in base_docket_set:
+                debug_log(f"Skipping duplicate Case (based on Docket): {r[case_idx]} ({docket_key})")
             else:
                 non_skip_rows.append(r)
                 new_docket_count += 1

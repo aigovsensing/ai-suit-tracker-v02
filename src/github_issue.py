@@ -73,9 +73,9 @@ def create_comment(owner: str, repo: str, token: str, issue_number: int, body: s
     r = requests.post(url, headers=_headers(token), json={"body": body}, timeout=20)
     r.raise_for_status()
 
-def list_open_issues_by_label(owner: str, repo: str, token: str, label: str, per_page: int = 100) -> list[dict]:
+def list_issues_by_label(owner: str, repo: str, token: str, label: str, state: str = "open", per_page: int = 50) -> list[dict]:
     url = f"https://api.github.com/repos/{owner}/{repo}/issues"
-    r = requests.get(url, headers=_headers(token), params={"state": "open", "labels": label, "per_page": per_page}, timeout=20)
+    r = requests.get(url, headers=_headers(token), params={"state": state, "labels": label, "per_page": per_page}, timeout=20)
     r.raise_for_status()
     return r.json() or []
 
@@ -87,7 +87,7 @@ def close_issue(owner: str, repo: str, token: str, issue_number: int) -> None:
 def close_other_daily_issues(owner: str, repo: str, token: str, label: str, base_title: str, today_title: str, new_issue_number: int, new_issue_url: str) -> list[int]:
     """같은 라벨을 가진 모니터링 이슈 중 '오늘/현재' 이슈를 제외한 나머지 OPEN 이슈를 닫습니다."""
     closed: list[int] = []
-    issues = list_open_issues_by_label(owner, repo, token, label)
+    issues = list_issues_by_label(owner, repo, token, label, state="open")
     prefix = f"{base_title} ("
     
     # [수정] footer 문자열을 올바르게 합치고 따옴표를 닫았습니다.
