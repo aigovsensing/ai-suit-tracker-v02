@@ -131,28 +131,28 @@ def main() -> None:
     issue_url = f"https://github.com/{owner}/{repo}/issues/{issue_no}"
 
     # =========================================================
-    # Baseline 비교 로직 (Modularized)
+    # Baseline 비교 로직 (매 댓글 실시간 중복 제거 강화)
     # =========================================================
-    comments = list_comments(owner, repo, gh_token, issue_no)
+    # 1. 현재 이슈의 기존 댓글 (오늘 이미 보고된 내용 확인)
+    current_comments = list_comments(owner, repo, gh_token, issue_no)
     
-    # [Mission] 현재 이슈에 댓글이 없으면(첫 실행), 이전 이슈의 댓글을 베이스라인으로 활용
-    if not comments:
-        debug_log(f"이슈 #{issue_no}에 첫 리포트를 작성합니다. 이전 이슈에서 베이스라인을 추출합니다.")
-        from .github_issue import list_issues_by_label
-        # 최근 이슈들(상태 무관) 조회
-        recent_issues = list_issues_by_label(owner, repo, gh_token, issue_label, state="all", per_page=10)
+    # 2. 전날(이전 이슈)의 댓글도 항상 베이스라인에 포함 (Cross-Issue 연속성 유지)
+    # [Mission] 오늘 첫 번째 댓글 뿐만 아니라, 이후 모든 'Add a comment' 시에도 전날 리포트와 중복되면 skip함
+    from .github_issue import list_issues_by_label
+    recent_issues = list_issues_by_label(owner, repo, gh_token, issue_label, state="all", per_page=10)
+    other_issues = [it for it in recent_issues if int(it["number"]) < issue_no]
+    
+    prev_comments = []
+    if other_issues:
+        other_issues.sort(key=lambda x: int(x["number"]), reverse=True)
+        prev_issue_no = int(other_issues[0]["number"])
+        debug_log(f"이전 이슈 #{prev_issue_no}의 댓글을 베이스라인에 추가하여 중복을 필터링합니다.")
+        prev_comments = list_comments(owner, repo, gh_token, prev_issue_no)
         
-        # 현재 번호보다 작으면서 가장 큰 번호(즉, 바로 직전 이슈) 찾기
-        other_issues = [it for it in recent_issues if int(it["number"]) < issue_no]
-        if other_issues:
-            other_issues.sort(key=lambda x: int(x["number"]), reverse=True)
-            prev_issue_no = int(other_issues[0]["number"])
-            debug_log(f"이전 이슈 #{prev_issue_no}의 댓글을 분석하여 오늘 첫 리포트의 중복을 제거합니다.")
-            comments = list_comments(owner, repo, gh_token, prev_issue_no)
-        else:
-            debug_log("비교할 이전 이슈가 발견되지 않았습니다.")
-
-    md, new_news_count, new_cases_count = apply_deduplication(md, comments)
+    # 오늘 수집된 댓글 + 어제 최종 댓글들을 모두 합쳐서 중복 제거 기준으로 사용
+    all_baseline_comments = current_comments + prev_comments
+    
+    md, new_news_count, new_cases_count = apply_deduplication(md, all_baseline_comments)
     
     # 새로운 소식이 하나도 없는지 여부 확인
     no_new_updates = (new_news_count == 0 and new_cases_count == 0)
