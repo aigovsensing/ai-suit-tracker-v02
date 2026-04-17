@@ -81,18 +81,22 @@ AI 모델 학습을 위한 데이터 무단 사용 및 관련 저작권 소송�
 
 ## 📚 참고문헌 (References)
 
-본 프로젝트의 고도화와 AI 및 저작권법의 교차점 이해를 위해 참고하면 좋은 주요 문헌들을 IEEE Reference 스타일로 정리하였습니다.
+# IEEE Reference 스타일 — 웹주소 추가본
 
-[1] M. A. Lemley and B. Casey, "Fair Learning," *Texas Law Review*, vol. 99, no. 4, pp. 743-785, Mar. 2021.
+---
 
-[2] M. Sag, "Copyright Safety for Generative AI," *Houston Law Review*, vol. 61, no. 4, pp. 101-145, 2023.
+[1] M. A. Lemley and B. Casey, "Fair Learning," *Texas Law Review*, vol. 99, no. 4, pp. 743–785, Mar. 2021. \[Online\]. Available: [https://texaslawreview.org/fair-learning/](https://texaslawreview.org/fair-learning/) (preprint: [https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3528447](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3528447))
 
-[3] P. Henderson et al., "Foundation Models and Fair Use," *arXiv preprint*, arXiv:2303.15715, Mar. 2023.
+[2] M. Sag, "Copyright Safety for Generative AI," *Houston Law Review*, vol. 61, no. 4, pp. 295–347, 2023. \[Online\]. Available: [https://houstonlawreview.org/article/92126-copyright-safety-for-generative-ai](https://houstonlawreview.org/article/92126-copyright-safety-for-generative-ai) (preprint: [https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4438593](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4438593))
 
-[4] B. L. W. Sobel, "Artificial Intelligence's Fair Use Crisis," *Columbia Journal of Law & the Arts*, vol. 41, no. 1, pp. 45-97, 2017.
+[3] P. Henderson *et al.*, "Foundation Models and Fair Use," arXiv preprint, arXiv:2303.15715, Mar. 2023. \[Online\]. Available: [https://arxiv.org/abs/2303.15715](https://arxiv.org/abs/2303.15715)
 
-[5] N. Elkin-Koren, "Controlling the Means of Creativity: Generative AI and the Future of Copyright," *Cardozo Arts & Entertainment Law Journal*, vol. 41, no. 1, pp. 1-42, 2023.
+[4] B. L. W. Sobel, "Artificial Intelligence's Fair Use Crisis," *Columbia Journal of Law & the Arts*, vol. 41, no. 1, pp. 45–97, 2017. \[Online\]. Available: [https://journals.library.columbia.edu/index.php/lawandarts/article/view/2036](https://journals.library.columbia.edu/index.php/lawandarts/article/view/2036)
 
-[6] D. J. Gervais, "The Human Cause as the Foundation of Copyright Law," *Vanderbilt Law Review*, vol. 76, no. 4, pp. 1121-1180, May 2023.
+[5] N. Elkin-Koren, "Controlling the Means of Creativity: Generative AI and the Future of Copyright," *Cardozo Arts & Entertainment Law Journal*, vol. 41, no. 1, pp. 1–42, 2023. \[Online\]. Available: [https://larc.cardozo.yu.edu/aelj/](https://larc.cardozo.yu.edu/aelj/)  
 
-[7] P. Samuelson, "Generative AI meets Copyright," *Science*, vol. 381, no. 6654, pp. 158-161, July 2023.
+[6] D. J. Gervais, "The Human Cause as the Foundation of Copyright Law," *Vanderbilt Law Review*, vol. 76, no. 4, pp. 1121–1180, May 2023. \[Online\]. Available: [https://vanderbiltlawreview.org](https://vanderbiltlawreview.org) (SSRN 선행 버전: [https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3857844](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3857844))
+
+[7] P. Samuelson, "Generative AI meets Copyright," *Science*, vol. 381, no. 6654, pp. 158–161, July 2023. \[Online\]. Available: [https://www.science.org/doi/10.1126/science.adi0656](https://www.science.org/doi/10.1126/science.adi0656)
+
+---
