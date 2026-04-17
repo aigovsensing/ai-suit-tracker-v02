@@ -84,9 +84,9 @@ def _slugify_case_name(name: str) -> str:
 
 
 # =====================================================
-# 위험도 기준 정의
+# 비인가 데이터 학습 소송 감지 기준 정의
 # =====================================================
-RISK_CRITERIA = [
+DETECTION_CRITERIA = [
     ("무단 데이터 수집 명시", ["scrape", "crawl", "ingest", "harvest", "mining", "extraction", "bulk", "collection", "robots.txt", "common crawl", "laion", "the pile", "bookcorpus", "unauthorized"], 25),
     ("모델 학습 직접 언급", ["train", "training", "model", "llm", "generative ai", "genai", "gpt", "transformer", "weight", "fine-tune", "diffusion", "inference"], 20),
     ("저작권 직접 언급", ["820", "3820", "copyright"], 30),
@@ -98,14 +98,14 @@ RISK_CRITERIA = [
 
 
 # =====================================================
-# 뉴스 위험도
+# 뉴스 감지 레벨
 # =====================================================
-def calculate_news_risk_score(title: str, reason: str) -> tuple[int, List[str]]:
+def calculate_news_detection_score(title: str, reason: str) -> tuple[int, List[str]]:
     score = 0
     matched_keywords = []
     text = f"{title or ''} {reason or ''}".lower()
 
-    for name, keywords, points in RISK_CRITERIA:
+    for name, keywords, points in DETECTION_CRITERIA:
         found = [k for k in keywords if k in text]
         if found:
             score += points
@@ -115,7 +115,7 @@ def calculate_news_risk_score(title: str, reason: str) -> tuple[int, List[str]]:
     return max(0, min(score, 100)), matched_keywords
 
 
-def format_risk(score: int) -> str:
+def format_detection_level(score: int) -> str:
     if score >= 80:
         return f"🔥 {score}"
     if score >= 60:
@@ -126,9 +126,9 @@ def format_risk(score: int) -> str:
 
 
 # =====================================================
-# RECAP 위험도
+# RECAP 감지 레벨
 # =====================================================
-def calculate_case_risk_score(case: CLCaseSummary) -> int:
+def calculate_case_detection_score(case: CLCaseSummary) -> int:
     score = 0
     text = f"{case.extracted_ai_snippet or ''} {case.extracted_causes or ''}".lower()
     nature = (case.nature_of_suit or "").lower()
@@ -257,13 +257,13 @@ def render_markdown(
     lines.append("## 📰 AI Suit News")
     if lawsuits:
         debug_log("'News' is printed.")            
-        lines.append("| No. | 기사일자 | 제목 | 소송번호 | 조건 (주요 키워드) | 소송사유 | 위험도⬇️ |")
+        lines.append("| No. | 기사일자 | 제목 | 소송번호 | 조건 (주요 키워드) | 소송사유 | 감지 레벨⬇️ |")
         lines.append(_md_sep(7))
 
-        # 기사일자 기준으로 정렬 (날짜 내림차순, 동일 날짜 시 위험도 내림차순)
+        # 기사일자 기준으로 정렬 (날짜 내림차순, 동일 날짜 시 감지 레벨 내림차순)
         scored_lawsuits = []
         for s in lawsuits:
-            risk_score, keywords = calculate_news_risk_score(s.article_title or s.case_title, s.reason)
+            risk_score, keywords = calculate_news_detection_score(s.article_title or s.case_title, s.reason)
             scored_lawsuits.append((risk_score, keywords, s))
         
         scored_lawsuits.sort(key=lambda x: (x[0], x[2].update_or_filed_date or ""), reverse=True)
@@ -283,7 +283,7 @@ def render_markdown(
                 f"{_esc(s.case_number)} | "
                 f"{_esc(keyword_display)} | "
                 f"{_short(s.reason)} | "
-                f"{format_risk(risk_score)} |"
+                f"{format_detection_level(risk_score)} |"
             )
         lines.append("")
     else:
@@ -300,13 +300,13 @@ def render_markdown(
                 doc_map[d.docket_id] = d
         
         lines.append(
-            "| No. | 상태 | 케이스명 | 도켓번호 | Nature | 위험도⬇️ | "
+            "| No. | 상태 | 케이스명 | 도켓번호 | Nature | 감지 레벨⬇️ | "
             "소송이유 | AI학습관련 핵심주장 | 법적 근거 | 담당판사 | 법원 | "
             "Complaint 문서 번호 | Complaint PDF 링크 | 최근 도켓 업데이트 |"
         )
         lines.append(_md_sep(14))
         
-        # 위험도 점수 기준으로 정렬 (위험도 내림차순, 동일 점수 시 날짜 내림차순)
+        # 감지 레벨 점수 기준으로 정렬 (내림차순, 동일 점수 시 날짜 내림차순)
         scored_cases = []
         for c in cl_cases:
             # 최종 스코어링 소스 텍스트 결정
@@ -317,11 +317,11 @@ def render_markdown(
                 ext_causes = doc.extracted_causes or ext_causes
                 ext_snippet = doc.extracted_ai_snippet or ext_snippet
             
-            # 위험도 계산용 임시 객체 (원본 보호)
+            # 감지 레벨 계산용 임시 객체 (원본 보호)
             c_copy = copy.copy(c)
             c_copy.extracted_ai_snippet = ext_snippet
             c_copy.extracted_causes = ext_causes
-            score = calculate_case_risk_score(c_copy)
+            score = calculate_case_detection_score(c_copy)
             scored_cases.append((score, c, ext_causes, ext_snippet))
             
         scored_cases.sort(key=lambda x: (x[0], x[1].recent_updates if x[1].recent_updates != "미확인" else ""), reverse=True)
@@ -356,7 +356,7 @@ def render_markdown(
                 # =====================================================
                 # NEW: RECAP 테이블 로그 출력
                 # =====================================================
-                debug_log(f"RECAP row added: case={c.case_name}, docket={c.docket_number}, risk={score}")
+                debug_log(f"RECAP row added: case={c.case_name}, docket={c.docket_number}, detection={score}")
 
                 # =====================================================
                 # NEW: Nature 필드 강조 처리
@@ -375,7 +375,7 @@ def render_markdown(
                     f"{icon} {_mdlink(c.case_name, docket_url)} | "
                     f"{_mdlink(c.docket_number, docket_url)} | "
                     f"{nature_display} | "
-                    f"{format_risk(score)} | "
+                    f"{format_detection_level(score)} | "
                     f"{_short(extracted_causes, 120)} | "
                     f"{_short(extracted_ai_snippet, 120)} | "
                     f"{_esc(c.cause)} | "
@@ -422,31 +422,31 @@ def render_markdown(
                 lines.append(f"- {u}")
         lines.append("</details>\n")
 
-    # 위험도 척도
+    # 감지 레벨 척도
     lines.append("<details>")
-    lines.append("<summary><strong><span style=\"font-size:2.5em; font-weight:bold;\">📘 AI 학습 위험도 점수(0~100) 평가 척도</span></strong></summary>\n")
-    lines.append("- AI 모델 학습과의 직접성 + 법적 리스크 강도를 수치화한 지표입니다.")
+    lines.append("<summary><strong><span style=\"font-size:2.5em; font-weight:bold;\">📘 비인가 데이터 학습 소송 감지 레벨(0~100) 평가 척도</span></strong></summary>\n")
+    lines.append("- 해당 건이 비인가 데이터 학습 소송과 얼마나 밀접한지를 표현하며 리스크 강도를 수치화한 지표입니다.")
     lines.append("- 0에 가까울수록 → 간접/주변 이슈")
-    lines.append("- 100에 가까울수록 → AI 학습 핵심 리스크 사건\n")
+    lines.append("- 100에 가까울수록 → 비인가 학습 핵심 감지 사건\n")
     lines.append("")
     
-    lines.append("### 📊 등급 기준")
-    lines.append("- -10 ~ 0 🤝 : Data 정식 계약/협력")
-    lines.append("-  0~ 39 🟢 : 간접 연관")
-    lines.append("- 40~ 59 🟡 : 학습 쟁점 존재")
-    lines.append("- 60~ 79 ⚠️ : 모델 학습 직접 언급")
-    lines.append("- 80~100 🔥 : 무단 수집 + 학습 + 상업적 사용 고위험")
-    lines.append("- (참고) 정식 계약/협력 발생 시 위험도 점수를 -10점 차감하여 실제 분쟁 이슈와 차별화하였습니다. (최소 0점 보정 포함)\n")
+    lines.append("### 📊 등급 기준 (Detection Level)")
+    lines.append("- -10 ~ 0 🤝 : Data 정식 계약/협력 (Low)")
+    lines.append("-  0~ 39 🟢 : 간접 연관 (Low)")
+    lines.append("- 40~ 59 🟡 : 학습 쟁점 존재 (Medium)")
+    lines.append("- 60~ 79 ⚠️ : 모델 학습 직접 언급 (High)")
+    lines.append("- 80~100 🔥 : 무단 수집 + 학습 + 상업적 사용 (Critical High)")
+    lines.append("- (참고) 정식 계약/협력 발생 시 감지 레벨 점수를 -10점 차감하여 실제 비인가 학습 소송 이슈와 차별화하였습니다. (최소 0점 보정 포함)\n")
     lines.append("")
 
-    lines.append("### 🧮 점수 산정 기준")
+    lines.append("### 🧮 점수 산정 기준 (비인가 데이터 학습 소송 감지 기준)")
     lines.append("| 항목 | 조건 (주요 키워드) | 점수 |")
     lines.append("|---|---|---|")
-    for name, keywords, points in RISK_CRITERIA:
+    for name, keywords, points in DETECTION_CRITERIA:
         kw_str = ", ".join(keywords[:5]) + " 등"
         sign = "+" if points > 0 else ""
         lines.append(f"| {name} | {kw_str} | {sign}{points} |")
-    lines.append("\n- **위험도 산정 로직 개선**: 정식 계약/협력 발생 시 위험도 점수를 -10점 차감하여 실제 분쟁 이슈와 차별화하였습니다. (최소 0점 보정 포함)")
+    lines.append("\n- **감지 레벨 산정 로직 개선**: 정식 계약/협력 발생 시 감지 레벨 점수를 -10점 차감하여 실제 비인가 학습 소송 이슈와 차별화하였습니다. (최소 0점 보정 포함)")
     lines.append("")
 
     lines.append("</details>\n")
