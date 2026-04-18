@@ -21,6 +21,7 @@ from .courtlistener import (
     build_documents_from_docket_ids,
 )
 from .queries import COURTLISTENER_QUERIES
+from .trend import generate_trend_summary
 
 def main() -> None:
     # 0) 환경 변수 로드
@@ -182,6 +183,20 @@ def main() -> None:
     comment_body = f"\n\n{md}"
     create_comment(owner, repo, gh_token, issue_no, comment_body)
     debug_log(f"Issue #{issue_no} 댓글 업로드 완료")
+
+    # 4-2) Gemini를 통한 핵심 동향 요약 추가 (옵션 설정)
+    trend_lookback = os.environ.get("GEMINI_AISUIT_TREND_DAYS")
+    if trend_lookback and not no_new_updates:
+        try:
+            trend_days = int(trend_lookback)
+            debug_log(f"Gemini 동향 요약 기능 활성화 (설정 기간: {trend_days}일)")
+            trend_summary = generate_trend_summary(lawsuits, cl_cases, trend_days)
+            if trend_summary:
+                trend_comment_body = f"## 🗓️ {trend_days}일간의 소송센싱 주요 동향 현황 (wih Gemini)\n\n{trend_summary}"
+                create_comment(owner, repo, gh_token, issue_no, trend_comment_body)
+                debug_log(f"Issue #{issue_no} Gemini 동향 요약 댓글 업로드 완료")
+        except ValueError:
+            debug_log(f"유효하지 않은 GEMINI_AISUIT_TREND_DAYS 값: {trend_lookback}. 기능을 건너뜁니다.")
 
     # 5) Slack 요약 전송
     # ============================================
