@@ -13,7 +13,8 @@ def get_gemini_summary(prompt: str) -> str:
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # 2026년 기준 최신 Flash 모델 자동 매핑을 위해 flash-latest 사용
+        model = genai.GenerativeModel("gemini-flash-latest")
         
         response = model.generate_content(prompt)
         return response.text

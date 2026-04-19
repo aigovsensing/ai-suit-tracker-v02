@@ -161,8 +161,26 @@ def main() -> None:
     if no_new_updates:
         md = "새로운 소식들이 없습니다."
     else:
-        # 실행 시각(KST)을 최상단에 배치 (중복 제거 요약보다 위에 오도록)
-        md = f"### 실행 시각(KST): {run_ts_kst}\n\n" + md
+        # 실행 시각(KST) 생성
+        run_info = f"### 실행 시각(KST): {run_ts_kst}\n\n"
+        
+        # 4-2) Gemini를 통한 핵심 동향 요약 추가 (옵션 설정)
+        trend_summary_section = ""
+        trend_lookback = os.environ.get("GEMINI_AISUIT_TREND_DAYS")
+        if trend_lookback:
+            try:
+                trend_days = int(trend_lookback)
+                debug_log(f"Gemini 동향 요약 기능 활성화 (설정 기간: {trend_days}일)")
+                trend_summary = generate_trend_summary(lawsuits, cl_cases, trend_days)
+                if trend_summary:
+                    trend_summary_section = f"## 🗓️ {trend_days}일간의 소송센싱 주요 동향 현황 (wih Gemini)\n\n{trend_summary}\n\n---\n\n"
+                    debug_log("Gemini 동향 요약 생성 완료")
+            except Exception as e:
+                debug_log(f"Gemini 동향 요약 생성 중 오류 발생: {e}")
+
+        # 최종 마크다운 조합 (요약 -> 실행시간 -> 본문)
+        # 사용자의 요청에 맞춰 순서 조정: 요약 -> 실행시간 -> 본문
+        md = trend_summary_section + run_info + md
 
     # 이전 날짜 이슈 Close
     closed_nums = close_other_daily_issues(owner, repo, gh_token, issue_label, base_title, issue_title, issue_no, issue_url)
@@ -182,21 +200,7 @@ def main() -> None:
 
     comment_body = f"\n\n{md}"
     create_comment(owner, repo, gh_token, issue_no, comment_body)
-    debug_log(f"Issue #{issue_no} 댓글 업로드 완료")
-
-    # 4-2) Gemini를 통한 핵심 동향 요약 추가 (옵션 설정)
-    trend_lookback = os.environ.get("GEMINI_AISUIT_TREND_DAYS")
-    if trend_lookback and not no_new_updates:
-        try:
-            trend_days = int(trend_lookback)
-            debug_log(f"Gemini 동향 요약 기능 활성화 (설정 기간: {trend_days}일)")
-            trend_summary = generate_trend_summary(lawsuits, cl_cases, trend_days)
-            if trend_summary:
-                trend_comment_body = f"## 🗓️ {trend_days}일간의 소송센싱 주요 동향 현황 (wih Gemini)\n\n{trend_summary}"
-                create_comment(owner, repo, gh_token, issue_no, trend_comment_body)
-                debug_log(f"Issue #{issue_no} Gemini 동향 요약 댓글 업로드 완료")
-        except ValueError:
-            debug_log(f"유효하지 않은 GEMINI_AISUIT_TREND_DAYS 값: {trend_lookback}. 기능을 건너뜁니다.")
+    debug_log(f"Issue #{issue_no} 리포트 및 요약 댓글 업로드 완료")
 
     # 5) Slack 요약 전송
     # ============================================
