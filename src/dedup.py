@@ -9,11 +9,13 @@ def extract_section(md_text: str, section_title: str) -> str:
     start = None
     end = None
     for i, line in enumerate(lines):
-        if line.strip().startswith(section_title):
+        s_line = line.strip()
+        # 제목이 포함되어 있고, 헤더 형식이거나 summary 태그인 경우 유연하게 대응
+        if section_title in s_line and (s_line.startswith("#") or "<summary>" in s_line):
             start = i + 1
             continue
-        # 다음 섹션 시작(H2 또는 H3)을 만나면 종료
-        if start and (line.startswith("## ") or line.startswith("### ")):
+        # 다음 섹션 시작 또는 details 종료시 중단
+        if start and (s_line.startswith("##") or s_line.startswith("###") or "</details>" in s_line):
             end = i
             break
     if start is None:
@@ -279,8 +281,11 @@ def generate_consolidated_report(comments: List[dict]) -> str:
     for comment in comments:
         body = comment.get("body") or ""
 
-        # 1) News 파이싱
-        news_section = extract_section(body, "## 📰 AI Suit News")
+        # 1) News 파이싱 (H2, H3 모두 대응)
+        news_section = extract_section(body, "### 📰 AI Suit News")
+        if not news_section:
+            news_section = extract_section(body, "## 📰 AI Suit News")
+        
         h_news, r_news, meta_news = parse_table(news_section)
         if h_news and "제목" in h_news:
             title_idx = h_news.index("제목")
@@ -294,8 +299,11 @@ def generate_consolidated_report(comments: List[dict]) -> str:
                 if key not in unique_news:
                     unique_news[key] = r
 
-        # 2) Cases 파싱
-        recap_section = extract_section(body, "## ⚖️ Cases")
+        # 2) Cases 파싱 (H2, H3 모두 대응)
+        recap_section = extract_section(body, "### ⚖️ Cases")
+        if not recap_section:
+            recap_section = extract_section(body, "## ⚖️ Cases")
+            
         h_cases, r_cases, meta_cases = parse_table(recap_section)
         if h_cases and "도켓번호" in h_cases:
             docket_idx = h_cases.index("도켓번호")
