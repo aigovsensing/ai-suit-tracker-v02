@@ -36,6 +36,8 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           # Gemini 동향 요약 기능 활성화 여부 및 기간 (값이 있으면 활성화)
           GEMINI_AISUIT_TREND_DAYS: ${{ vars.GEMINI_AISUIT_TREND_DAYS || secrets.GEMINI_AISUIT_TREND_DAYS }}
+          # 이전 이슈 중복 제거 범위 (일수)
+          PREVIOUS_ITEM_DEDUP_DAYS: ${{ vars.PREVIOUS_ITEM_DEDUP_DAYS }}
           # 기본값(코드 내 default) = 3일
           # Actions → Variables에 LOOKBACK_DAYS를 만들면 2 등으로 쉽게 조정 가능
           LOOKBACK_DAYS: ${{ vars.LOOKBACK_DAYS }}

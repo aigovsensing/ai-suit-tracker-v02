@@ -137,18 +137,32 @@ def main() -> None:
     # 1. 현재 이슈의 기존 댓글 (오늘 이미 보고된 내용 확인)
     current_comments = list_comments(owner, repo, gh_token, issue_no)
     
-    # 2. 전날(이전 이슈)의 댓글도 항상 베이스라인에 포함 (Cross-Issue 연속성 유지)
-    # [Mission] 오늘 첫 번째 댓글 뿐만 아니라, 이후 모든 'Add a comment' 시에도 전날 리포트와 중복되면 skip함
+    # 2. 이전 이슈들의 댓글도 베이스라인에 포함 (Cross-Issue 연속성 유지)
+    # [Mission] PREVIOUS_ITEM_DEDUP_DAYS 설정 기간만큼 이전 이슈들을 탐색하여 중복 필터링
     from .github_issue import list_issues_by_label
-    recent_issues = list_issues_by_label(owner, repo, gh_token, issue_label, state="all", per_page=10)
-    other_issues = [it for it in recent_issues if int(it["number"]) < issue_no]
     
+    dedup_days_str = os.environ.get("PREVIOUS_ITEM_DEDUP_DAYS")
     prev_comments = []
-    if other_issues:
-        other_issues.sort(key=lambda x: int(x["number"]), reverse=True)
-        prev_issue_no = int(other_issues[0]["number"])
-        debug_log(f"이전 이슈 #{prev_issue_no}의 댓글을 베이스라인에 추가하여 중복을 필터링합니다.")
-        prev_comments = list_comments(owner, repo, gh_token, prev_issue_no)
+    
+    if dedup_days_str:
+        try:
+            dedup_days = int(dedup_days_str)
+            debug_log(f"최근 {dedup_days}개 이전 이슈를 베이스라인으로 사용하여 중복을 필터링합니다.")
+            
+            recent_issues = list_issues_by_label(owner, repo, gh_token, issue_label, state="all", per_page=dedup_days + 5)
+            # 현재 이슈보다 번호가 작은 이슈들만 필터링
+            other_issues = [it for it in recent_issues if int(it["number"]) < issue_no]
+            other_issues.sort(key=lambda x: int(x["number"]), reverse=True)
+            
+            # 설정한 일수만큼 이전 이슈 탐색
+            for it in other_issues[:dedup_days]:
+                p_no = int(it["number"])
+                debug_log(f"이전 이슈 #{p_no}의 댓글을 베이스라인에 추가합니다.")
+                prev_comments.extend(list_comments(owner, repo, gh_token, p_no))
+        except ValueError:
+            debug_log(f"유효하지 않은 PREVIOUS_ITEM_DEDUP_DAYS 값: {dedup_days_str}. 이전 이슈 중복 체크를 건너뜁니다.")
+    else:
+        debug_log("PREVIOUS_ITEM_DEDUP_DAYS가 설정되지 않았습니다. 이전 이슈와의 중복 체크를 수행하지 않습니다.")
         
     # 오늘 수집된 댓글 + 어제 최종 댓글들을 모두 합쳐서 중복 제거 기준으로 사용
     all_baseline_comments = current_comments + prev_comments
