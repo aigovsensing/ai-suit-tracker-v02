@@ -12,7 +12,8 @@ def extract_section(md_text: str, section_title: str) -> str:
         if line.strip().startswith(section_title):
             start = i + 1
             continue
-        if start and line.startswith("## "):
+        # 다음 섹션 시작(H2 또는 H3)을 만나면 종료
+        if start and (line.startswith("## ") or line.startswith("### ")):
             end = i
             break
     if start is None:
@@ -77,9 +78,9 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
     """
     if not comments:
         # 댓글이 없는 경우 신규 데이터 정보 추출
-        news_section = extract_section(md, "## 📰 AI Suit News")
+        news_section = extract_section(md, "### 📰 AI Suit News")
         _, n_rows, _ = parse_table(news_section)
-        recap_section = extract_section(md, "## ⚖️ Cases")
+        recap_section = extract_section(md, "### ⚖️ Cases")
         _, c_rows, _ = parse_table(recap_section)
         return md, len(n_rows), len(c_rows)
 
@@ -91,8 +92,12 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         body = comment.get("body") or ""
         
         # News 처리 (제목 기준으로 체크)
-        news_section_base = extract_section(body, "## 📰 AI Suit News")
+        news_section_base = extract_section(body, "### 📰 AI Suit News")
         h_news, r_news, _ = parse_table(news_section_base)
+        if not h_news: # H2 시절 데이터 호환성
+             news_section_base = extract_section(body, "## 📰 AI Suit News")
+             h_news, r_news, _ = parse_table(news_section_base)
+
         if "제목" in h_news:
             idx = h_news.index("제목")
             for r in r_news:
@@ -101,8 +106,12 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
                     base_article_set.add(title)
         
         # Cases 처리 (도켓번호 기준으로 체크)
-        recap_section_base = extract_section(body, "## ⚖️ Cases")
+        recap_section_base = extract_section(body, "### ⚖️ Cases")
         h_cases, r_cases, _ = parse_table(recap_section_base)
+        if not h_cases: # H2 시절 데이터 호환성
+             recap_section_base = extract_section(body, "## ⚖️ Cases")
+             h_cases, r_cases, _ = parse_table(recap_section_base)
+
         if "도켓번호" in h_cases:
             idx = h_cases.index("도켓번호")
             for r in r_cases:
@@ -122,7 +131,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
 
     # 2) 현재 Markdown 처리 (News - 새 이름 사용)
     current_md = md
-    news_section = extract_section(current_md, "## 📰 AI Suit News")
+    news_section = extract_section(current_md, "### 📰 AI Suit News")
     n_headers, n_rows, n_table_meta = parse_table(news_section)
 
     new_article_count = 0
@@ -158,7 +167,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         current_md = current_md.replace(news_section, new_news_section)
 
     # 3) 현재 Markdown 처리 (Cases)
-    recap_section = extract_section(current_md, "## ⚖️ Cases")
+    recap_section = extract_section(current_md, "### ⚖️ Cases")
     c_headers, c_rows, c_table_meta = parse_table(recap_section)
 
     new_docket_count = 0
