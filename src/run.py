@@ -176,7 +176,7 @@ def main() -> None:
         md = "새로운 소식들이 없습니다."
     else:
         # 실행 시각(KST)을 상단에 배치
-        md = f"### 실행 시각(KST): {run_ts_kst}\n\n" + md
+        md = f"### 비인가 데이터 학습 소송 모니터링 (실행시각: {run_ts_kst} KST)\n\n" + md
 
     # 이전 날짜 이슈 Close
     closed_nums = close_other_daily_issues(owner, repo, gh_token, issue_label, base_title, issue_title, issue_no, issue_url)
