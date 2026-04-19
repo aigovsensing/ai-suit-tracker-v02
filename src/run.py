@@ -188,7 +188,9 @@ def main() -> None:
     debug_log(f"  └ Cases (CourtListener+RECAP): {docket_case_count}건 (문서 {recap_doc_count}건)")
 
     # 4-2) Gemini를 통한 핵심 동향 요약 추가 (첫 번째 댓글로 등록)
-    if not no_new_updates:
+    # [Mission] 첫 번째 리포트(댓글이 없는 경우)이거나 새로운 소식이 있는 경우 Gemini 분석 수행
+    is_first_report = (len(current_comments) == 0)
+    if is_first_report or not no_new_updates:
         trend_lookback = os.environ.get("GEMINI_AISUIT_TREND_DAYS")
         if trend_lookback:
             try:
