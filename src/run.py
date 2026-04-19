@@ -187,6 +187,16 @@ def main() -> None:
                     debug_log(f"Issue #{issue_no} Gemini 동향 요약 댓글 업로드 완료")
             except Exception as e:
                 debug_log(f"Gemini 동향 요약 생성 중 오류 발생: {e}")
+        else:
+            # 기능 비활성화 시 안내 메시지 출력
+            skip_message = (
+                "> [!NOTE]\n"
+                "> **🤖 Gemini 인텔리전트 동향 요약 기능 안내**\n"
+                "> \"3일간의 소송센싱 주요 동향 현황 (with Gemini)\"이 Skip 처리되었습니다. \n"
+                "> 이 기능을 사용하려면 [README.md](./README.md) 파일을 참고하여 관련 환경변수를 추가해 주세요. ✨"
+            )
+            create_comment(owner, repo, gh_token, issue_no, skip_message)
+            debug_log("Gemini 동향 요약 Skip 안내 메시지 등록 완료")
 
     # 4-3) 메인 리포트 등록 (두 번째 댓글로 등록)
     comment_body = f"\n\n{md}"
