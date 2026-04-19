@@ -9,25 +9,30 @@ def generate_trend_summary(lawsuits: List[Lawsuit], cl_cases: List[CLCaseSummary
     수집된 뉴스 및 소송 데이터를 기반으로 Gemini를 통해 주요 동향 요약을 생성합니다.
     """
     
-    # 데이터 요약 구성
+    # 데이터 요약 구성 (출처 URL 포함)
     news_context = ""
     for idx, s in enumerate(lawsuits, 1):
-        news_context += f"{idx}. {s.update_or_filed_date} | {s.article_title or s.case_title} | {s.reason}\n"
+        url = s.article_urls[0] if s.article_urls else ""
+        news_context += f"{idx}. {s.update_or_filed_date} | {s.article_title or s.case_title} | {s.reason} | 출처: {url}\n"
     
     case_context = ""
     for idx, c in enumerate(cl_cases, 1):
-        case_context += f"{idx}. {c.recent_updates} | {c.case_name} | Nature: {c.nature_of_suit} | Snippet: {c.extracted_ai_snippet or ''}\n"
+        # slug 생성 (utils의 공통 함수 사용)
+        from .utils import slugify_case_name
+        slug = slugify_case_name(c.case_name)
+        docket_url = f"https://www.courtlistener.com/docket/{c.docket_id}/{slug}/"
+        case_context += f"{idx}. {c.recent_updates} | {c.case_name} | Nature: {c.nature_of_suit} | Snippet: {c.extracted_ai_snippet or ''} | 출처: {docket_url}\n"
 
     prompt = f"""
-당신은 AI 법률 및 저작권 전문가입니다. 아래에 제공된 최근 {lookback_days}일간의 AI 관련 소송 및 뉴스 데이터를 분석하여, 
-사용자가 "{lookback_days}일간의 소송센싱 주요 동향 현황 (wih Gemini)"이라는 제목으로 참고할 수 있는 핵심 동향 요약 리포트를 한글로 작성해주세요.
+당신은 AI 법률 및 저작권 전문가입니다. 최근 {lookback_days}일간의 AI 관련 소송 및 뉴스 데이터를 분석하여 핵심 동향 요약 리포트를 한글로 작성해주세요.
 
 [작성 지침]
-1. "AI Overview" 스타일로 작성해주세요.
-2. 현재 날짜와 최근 {lookback_days}일간의 가장 중요한 핵심 소송 및 동향을 3~5개 정도 핵심 위주로 요약해주세요.
-3. 각 항목은 '사건명/주체 (날짜): 핵심 내용 요약' 형식으로 작성해주세요.
-4. 마지막에는 최근의 전반적인 '핵심 동향'을 한 문장으로 정리해주세요.
-5. 출처가 명확하다면 포함시켜주세요.
+1. 별도의 제목(예: "## {lookback_days}일간의...")은 생략하고 바로 본문부터 작성해주세요.
+2. "AI Overview" 스타일로 정중하고 전문적인 톤으로 작성해주세요.
+3. 현재 날짜와 최근 {lookback_days}일간의 가장 중요한 핵심 소송 및 동향을 3~5개 정도 핵심 위주로 요약해주세요.
+4. 각 항목에는 반드시 해당 사건의 '출처'를 포함하고 가능하다면 마크다운 링크 형식으로 작성해주세요 (예: [출처 이름](URL)). 사용자가 직접 원문을 확인할 수 있도록 하기 위함입니다.
+5. 각 항목은 '주체/사건명 (날짜): 핵심 내용 요약' 형식으로 작성해주세요.
+6. 마지막에는 최근의 전반적인 '핵심 동향'을 한 문장으로 정리해주세요.
 
 [제공된 데이터 - 뉴스]
 {news_context}
