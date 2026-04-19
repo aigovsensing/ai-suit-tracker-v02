@@ -254,7 +254,7 @@ def render_markdown(
             debug_log("No 820 Copyright cases found for Top 3 section.")
 
     # 뉴스 테이블
-    lines.append("## 📰 AI Suit News")
+    lines.append("### 📰 AI Suit News")
     if lawsuits:
         debug_log("'News' is printed.")            
         lines.append("| No. | 기사일자 | 제목 | 소송번호 | 조건 (주요 키워드) | 소송사유 | 감지 레벨⬇️ |")
@@ -290,7 +290,7 @@ def render_markdown(
         lines.append("새로운 소식이 0건입니다.\n")
 
     # RECAP 케이스
-    lines.append("## ⚖️ Cases (Courtlistener+RECAP)")
+    lines.append("### ⚖️ Cases (Courtlistener+RECAP)")
     if cl_cases:
         
         # CLDocument를 docket_id 기준으로 매핑
