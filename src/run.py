@@ -221,6 +221,7 @@ def main() -> None:
     # ============================================
     # Slack 출력 개선 (최종 포맷)
     # ============================================
+    timestamp = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
 
     slack_dedup_news = None
     slack_dedup_cases = None
