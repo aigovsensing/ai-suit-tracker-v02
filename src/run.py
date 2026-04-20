@@ -194,7 +194,7 @@ def main() -> None:
     # [FIX] 이미 Gemini 동향 요약 또는 안내 메시지가 있는지 확인 (중복 출력 방지)
     trend_already_exists = any("소송센싱 주요 동향 현황" in (c.get("body") or "") for c in current_comments)
 
-    if (is_first_report or not no_new_updates) and not trend_already_exists:
+    if not trend_already_exists:
         trend_lookback = os.environ.get("GEMINI_AISUIT_TREND_DAYS")
         if trend_lookback:
             try:
