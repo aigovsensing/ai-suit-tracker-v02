@@ -190,7 +190,11 @@ def main() -> None:
     # 4-2) Gemini를 통한 핵심 동향 요약 추가 (첫 번째 댓글로 등록)
     # [Mission] 첫 번째 리포트(댓글이 없는 경우)이거나 새로운 소식이 있는 경우 Gemini 분석 수행
     is_first_report = (len(current_comments) == 0)
-    if is_first_report or not no_new_updates:
+    
+    # [FIX] 이미 Gemini 동향 요약 또는 안내 메시지가 있는지 확인 (중복 출력 방지)
+    trend_already_exists = any("소송센싱 주요 동향 현황" in (c.get("body") or "") for c in current_comments)
+
+    if (is_first_report or not no_new_updates) and not trend_already_exists:
         trend_lookback = os.environ.get("GEMINI_AISUIT_TREND_DAYS")
         if trend_lookback:
             try:
@@ -198,7 +202,7 @@ def main() -> None:
                 debug_log(f"Gemini 동향 요약 기능 활성화 (설정 기간: {trend_days}일)")
                 trend_summary = generate_trend_summary(lawsuits, cl_cases, trend_days)
                 if trend_summary:
-                    trend_comment_body = f"## 🗓️ {trend_days}일간의 소송센싱 주요 동향 현황 (wih Gemini)\n\n{trend_summary}"
+                    trend_comment_body = f"## 🗓️ {trend_days}일간의 소송센싱 주요 동향 현황 (with Gemini)\n\n{trend_summary}"
                     create_comment(owner, repo, gh_token, issue_no, trend_comment_body)
                     debug_log(f"Issue #{issue_no} Gemini 동향 요약 댓글 업로드 완료")
             except Exception as e:
