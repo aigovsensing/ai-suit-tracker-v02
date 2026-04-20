@@ -14,7 +14,11 @@ def get_gemini_summary(prompt: str) -> str:
     try:
         genai.configure(api_key=api_key)
         # 2026년 기준 최신 Flash 모델 자동 매핑을 위해 flash-latest 사용
-        model = genai.GenerativeModel("gemini-flash-latest")
+        # 인터넷 검색 소스 연동을 위한 tool 설정 추가
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash-latest",
+            tools=[{"google_search_retrieval": {}}]
+        )
         
         response = model.generate_content(prompt)
         return response.text
