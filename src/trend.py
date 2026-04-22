@@ -53,3 +53,39 @@ def generate_trend_summary(lawsuits: List[Lawsuit], cl_cases: List[CLCaseSummary
         return ""
         
     return summary.strip()
+
+def generate_daily_report_from_data(news_data: dict, case_data: dict) -> str:
+    """
+    당일 취합된 뉴스 및 소송 데이터를 기반으로 Gemini를 통해 당일 리포트를 요약합니다.
+    (취합 댓글 분석용)
+    """
+    news_lines = []
+    for k, r in news_data.items():
+        news_lines.append(f"- {r[1]} | {r[2]} | {r[5]} (감지레벨: {r[6]})")
+    
+    case_lines = []
+    for k, r in case_data.items():
+        # r[2]는 케이스명, r[3]은 도켓번호, r[4]는 Nature, r[6]은 소송이유, r[5]는 감지레벨
+        case_lines.append(f"- {r[2]} (도켓: {r[3]}) | Nature: {r[4]} | 소송이유: {r[6]} (감지레벨: {r[5]})")
+
+    prompt = f"""
+당신은 AI 법률 및 저작권 전문 분석가입니다. '오늘(오늘 하루 동안 수합된 리포트)' 수집된 다음의 AI 관련 뉴스 및 소송 사건들을 분석하여, 핵심 내용을 요약하는 "당일 신규/업데이트 소송건 요약 보고서"를 작성해주세요.
+
+[분석 대상 데이터]
+- 뉴스:
+{chr(10).join(news_lines) if news_lines else "오늘 수집된 뉴스가 없습니다."}
+
+- 소송:
+{chr(10).join(case_lines) if case_lines else "오늘 수집된 소송 사건이 없습니다."}
+
+[작성 지침]
+1. 제목은 "## 🧠 당일 신규/업데이트 소송건 요약 보고서 (Gemini)"로 시작해주세요.
+2. 오늘 발생한 가장 중요한 핵심 이슈를 2~3문장으로 먼저 요약해주세요.
+3. 주요 뉴스 및 소송 사건들을 그룹화하거나 개별적으로 분석하여 가독성 있게 정리해주세요.
+4. 기술적/법적 쟁점이 있는 경우 간략히 언급해주세요.
+5. 말투는 전문적이고 객관적인 어조를 유지하며, 한국어로 작성해주세요.
+6. 제공된 데이터에 기반하되, 전문적인 통찰력을 담아주세요.
+"""
+    debug_log(f"Gemini 당일 요약 리포트 생성 중 (데이터: 뉴스 {len(news_lines)}건, 소송 {len(case_lines)}건)")
+    summary = get_gemini_summary(prompt)
+    return (summary or "").strip()

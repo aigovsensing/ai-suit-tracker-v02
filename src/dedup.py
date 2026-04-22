@@ -272,114 +272,74 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
     return summary_header + current_md, new_article_count, new_docket_count + new_doc_count
 
 
-def generate_consolidated_report(comments: List[dict]) -> str:
-    """
-    모든 댓글의 내용을 취합하여 통합된 리포트를 생성합니다.
-    """
-    if not comments:
-        return "수집된 리포트 내용이 없습니다."
-
-    unique_news = {}  # URL -> row list
-    unique_cases = {}  # Docket -> row list
-
-    news_header_line = None
-    news_sep_line = None
-    news_header_cols = []
-
-    case_header_line = None
-    case_sep_line = None
-    case_header_cols = []
+def get_consolidated_data(comments: List[dict]) -> tuple[dict, dict, dict]:
+    """모든 댓글에서 유니크한 뉴스/사례 데이터를 추출하여 반환합니다."""
+    unique_news = {}
+    unique_cases = {}
+    meta = {"news_header": None, "news_sep": None, "case_header": None, "case_sep": None, "news_cols": [], "case_cols": []}
 
     for comment in comments:
         body = comment.get("body") or ""
-
-        # 1) News 파이싱 (H2, H3 모두 대응)
-        news_section = extract_section(body, "### 📰 AI Suit News")
-        if not news_section:
-            news_section = extract_section(body, "## 📰 AI Suit News")
-        
-        h_news, r_news, meta_news = parse_table(news_section)
+        # News 파싱
+        news_section = extract_section(body, "### 📰 AI Suit News") or extract_section(body, "## 📰 AI Suit News")
+        h_news, r_news, m_news = parse_table(news_section)
         if h_news and "제목" in h_news:
-            title_idx = h_news.index("제목")
-            if not news_header_line:
-                news_header_cols = h_news
-                news_header_line, news_sep_line = meta_news
-            
+            idx = h_news.index("제목")
+            if not meta["news_header"]:
+                meta["news_header"], meta["news_sep"] = m_news
+                meta["news_cols"] = h_news
             for r in r_news:
-                url = extract_article_url(r[title_idx])
-                key = url if url else r[title_idx]
-                if key not in unique_news:
-                    unique_news[key] = r
+                key = extract_article_url(r[idx]) or r[idx]
+                if key not in unique_news: unique_news[key] = r
 
-        # 2) Cases 파싱 (H2, H3 모두 대응)
-        recap_section = extract_section(body, "### ⚖️ Cases")
-        if not recap_section:
-            recap_section = extract_section(body, "## ⚖️ Cases")
-            
-        h_cases, r_cases, meta_cases = parse_table(recap_section)
+        # Cases 파싱
+        recap_section = extract_section(body, "### ⚖️ Cases") or extract_section(body, "## ⚖️ Cases")
+        h_cases, r_cases, m_cases = parse_table(recap_section)
         if h_cases and "도켓번호" in h_cases:
-            docket_idx = h_cases.index("도켓번호")
-            if not case_header_line:
-                case_header_cols = h_cases
-                case_header_line, case_sep_line = meta_cases
-            
+            idx = h_cases.index("도켓번호")
+            if not meta["case_header"]:
+                meta["case_header"], meta["case_sep"] = m_cases
+                meta["case_cols"] = h_cases
             for r in r_cases:
-                docket = r[docket_idx]
-                if docket not in unique_cases:
-                    unique_cases[docket] = r
+                if r[idx] not in unique_cases: unique_cases[r[idx]] = r
+    
+    return unique_news, unique_cases, meta
+
+def generate_consolidated_report(comments: List[dict]) -> str:
+    """모든 댓글 취합하여 통합 리포트 문자열 생성"""
+    unique_news, unique_cases, meta = get_consolidated_data(comments)
+    if not unique_news and not unique_cases:
+        return "수집된 리포트 내용이 없습니다."
 
     lines = ["## 📑 당일 소송건들 통합 정리 자료\n"]
-
+    
     # News 통합 출력
     lines.append("### 📰 통합 AI Suit News")
     if unique_news:
-        lines.append(news_header_line)
-        lines.append(news_sep_line)
-        
-        # 감지 레벨 점수 기준으로 내림차순 정렬
+        lines.append(meta["news_header"]); lines.append(meta["news_sep"])
         news_rows = list(unique_news.values())
-        if "감지 레벨⬇️" in news_header_cols:
-            det_idx = news_header_cols.index("감지 레벨⬇️")
-            def get_news_detection_score(row):
-                # "🟡 45"와 같은 문자열에서 숫자만 추출
-                m = re.search(r"(\d+)", row[det_idx])
-                return int(m.group(1)) if m else 0
-            news_rows.sort(key=get_news_detection_score, reverse=True)
-
-        no_idx = news_header_cols.index("No.") if "No." in news_header_cols else None
-        for i, row_data in enumerate(news_rows, 1):
-            row = list(row_data)
-            if no_idx is not None:
-                row[no_idx] = str(i)
+        if "감지 레벨⬇️" in meta["news_cols"]:
+            det_idx = meta["news_cols"].index("감지 레벨⬇️")
+            news_rows.sort(key=lambda r: int(re.search(r"(\d+)", r[det_idx]).group(1)) if re.search(r"(\d+)", r[det_idx]) else 0, reverse=True)
+        no_idx = meta["news_cols"].index("No.") if "No." in meta["news_cols"] else None
+        for i, row in enumerate(news_rows, 1):
+            if no_idx is not None: row[no_idx] = str(i)
             lines.append("| " + " | ".join(row) + " |")
-    else:
-        lines.append("수집된 뉴스 소식이 없습니다.")
+    else: lines.append("수집된 뉴스 소식이 없습니다.")
     lines.append("")
 
     # Cases 통합 출력
     lines.append("### ⚖️ 통합 Cases (Courtlistener+RECAP)")
     if unique_cases:
-        lines.append(case_header_line)
-        lines.append(case_sep_line)
-        
-        # 감지 레벨 기준으로 내림차순 정렬
+        lines.append(meta["case_header"]); lines.append(meta["case_sep"])
         case_rows = list(unique_cases.values())
-        if "감지 레벨⬇️" in case_header_cols:
-            det_idx = case_header_cols.index("감지 레벨⬇️")
-            def get_case_detection_score(row):
-                # "🟡 45"와 같은 문자열에서 숫자만 추출
-                m = re.search(r"(\d+)", row[det_idx])
-                return int(m.group(1)) if m else 0
-            case_rows.sort(key=get_case_detection_score, reverse=True)
-
-        no_idx = case_header_cols.index("No.") if "No." in case_header_cols else None
-        for i, row_data in enumerate(case_rows, 1):
-            row = list(row_data)
-            if no_idx is not None:
-                row[no_idx] = str(i)
+        if "감지 레벨⬇️" in meta["case_cols"]:
+            det_idx = meta["case_cols"].index("감지 레벨⬇️")
+            case_rows.sort(key=lambda r: int(re.search(r"(\d+)", r[det_idx]).group(1)) if re.search(r"(\d+)", r[det_idx]) else 0, reverse=True)
+        no_idx = meta["case_cols"].index("No.") if "No." in meta["case_cols"] else None
+        for i, row in enumerate(case_rows, 1):
+            if no_idx is not None: row[no_idx] = str(i)
             lines.append("| " + " | ".join(row) + " |")
-    else:
-        lines.append("수집된 사건 소식이 없습니다.")
-    lines.append("")
-
+    else: lines.append("수집된 사건 소식이 없습니다.")
+    
     return "\n".join(lines)

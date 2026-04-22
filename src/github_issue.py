@@ -104,18 +104,28 @@ def close_other_daily_issues(owner: str, repo: str, token: str, label: str, base
         if t.startswith(prefix) and t.endswith(")"):
             num = int(it["number"])
             
-            # [추가] 이슈를 닫기 전에 모든 댓글을 취합하여 통합 리포트 작성
+            # [추가] 이슈를 닫기 전에 모든 댓글을 취합하여 통합 리포트 작성 및 Gemini 분석
             try:
                 comments = list_comments(owner, repo, token, num)
+                
+                # 1) 통합 리포트 (통계/테이블)
                 consolidated_report = generate_consolidated_report(comments)
-                final_body = (
-                    f"{consolidated_report}\n\n"
-                    f"---\n\n"
-                    f"{footer}"
-                )
+                create_comment(owner, repo, token, num, consolidated_report)
+                
+                # 2) 당일 신규/업데이트 소송건 요약 보고서 (Gemini)
+                from .dedup import get_consolidated_data
+                from .trend import generate_daily_report_from_data
+                u_news, u_cases, _ = get_consolidated_data(comments)
+                
+                daily_summary = generate_daily_report_from_data(u_news, u_cases)
+                if daily_summary:
+                    create_comment(owner, repo, token, num, daily_summary)
+                
+                # 3) 최종 종료 알림 (footer)
+                final_body = f"--- \n\n{footer}"
             except Exception as e:
                 import sys
-                print(f"Error generating consolidated report for issue #{num}: {e}", file=sys.stderr)
+                print(f"Error generating consolidated reports for issue #{num}: {e}", file=sys.stderr)
                 final_body = footer
 
             comment_and_close_issue(owner, repo, token, num, final_body)
