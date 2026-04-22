@@ -8,16 +8,28 @@ def extract_section(md_text: str, section_title: str) -> str:
     lines = md_text.split("\n")
     start = None
     end = None
+    started_with_tag = False
+    
     for i, line in enumerate(lines):
         s_line = line.strip()
-        # 제목이 포함되어 있고, 헤더 형식이거나 summary 태그인 경우 유연하게 대응
+        # 제목이 포함되어 있고, 헤더 형식이거나 summary 태그인 경우 시작점으로 간주
         if section_title in s_line and (s_line.startswith("#") or "<summary>" in s_line):
             start = i + 1
+            started_with_tag = "<summary>" in s_line
             continue
-        # 다음 섹션 시작 또는 details 종료시 중단
-        if start and (s_line.startswith("##") or s_line.startswith("###") or "</details>" in s_line):
-            end = i
-            break
+        
+        if start is not None:
+            # 헤더로 시작한 경우, 다음 헤더 또는 새로운 섹션 태그를 만나면 종료
+            if not started_with_tag:
+                if s_line.startswith("#") or s_line.startswith("<details>") or s_line.startswith("<summary>"):
+                    end = i
+                    break
+            # 태그로 시작한 경우, </details>를 만나면 종료
+            else:
+                if "</details>" in s_line:
+                    end = i
+                    break
+    
     if start is None:
         return ""
     if end is None:
