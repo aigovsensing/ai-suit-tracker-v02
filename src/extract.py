@@ -35,7 +35,12 @@ def fetch_page_text(url: str, timeout: int = 15) -> tuple[str, str, BeautifulSou
     - 네트워크/차단 등의 이유로 실패할 수 있으므로 예외는 삼키고 빈 값 반환.
     """
     try:
-        r = requests.get(url, timeout=timeout, headers={"User-Agent": "Mozilla/5.0"}, allow_redirects=True)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        r = requests.get(url, timeout=timeout, headers=headers, allow_redirects=True)
         r.raise_for_status()
         final_url = (r.url or url).strip()
         soup = BeautifulSoup(r.text, "lxml")
@@ -52,48 +57,89 @@ def fetch_page_text(url: str, timeout: int = 15) -> tuple[str, str, BeautifulSou
         debug_log(f"fetch_page_text failed: {url}, error: {e}")
         return "", url, None
 
-def extract_publication_date(soup: BeautifulSoup | None) -> datetime | None:
-    """HTML의 메타 태그나 JSON-LD 등에서 기사 발행일을 추출합니다."""
+def extract_publication_date(soup: BeautifulSoup | None, text: str = "", url: str = "") -> datetime | None:
+    """HTML의 메타 태그나 JSON-LD, URL, 본문 텍스트 등에서 기사 발행일을 추출합니다."""
     if not soup:
         return None
     
+    found_dates: List[datetime] = []
+
     # 1. Open Graph / Article meta tags
     # article:published_time, published_at, date, etc.
-    properties = ["article:published_time", "og:article:published_time", "publication_date", "publish-date"]
+    properties = [
+        "article:published_time", "og:article:published_time", "og:published_time",
+        "publication_date", "publish-date", "publish_date",
+        "dc.date", "dc.date.issued", "date", "pubdate",
+        "sailthru.date", "parsely-pub-date", "bt:pubDate",
+        "article:published", "published_time", "release_date",
+        "last-modified", "last_modified", "og:updated_time", "article:modified_time"
+    ]
     for prop in properties:
         meta = soup.find("meta", property=prop) or soup.find("meta", attrs={"name": prop})
         if meta and meta.get("content"):
             dt = parse_dt(meta["content"])
-            if dt: return dt
+            if dt: found_dates.append(dt)
 
     # 2. JSON-LD
     for script in soup.find_all("script", type="application/ld+json"):
         try:
             data = json.loads(script.string)
-            if isinstance(data, list):
-                # 리스트인 경우 각 항목 확인
-                for item in data:
-                    if isinstance(item, dict) and "datePublished" in item:
-                        dt = parse_dt(item["datePublished"])
-                        if dt: return dt
-            elif isinstance(data, dict):
-                # 단일 객체이거나 @graph 내부 확인
-                if "datePublished" in data:
-                    dt = parse_dt(data["datePublished"])
-                    if dt: return dt
-                if "@graph" in data:
-                    for item in data["@graph"]:
-                        if isinstance(item, dict) and "datePublished" in item:
-                            dt = parse_dt(item["datePublished"])
-                            if dt: return dt
+            def find_dates_in_json(obj):
+                if isinstance(obj, dict):
+                    # datePublished가 가장 정확하며, dateCreated를 차선책으로 활용
+                    for k in ["datePublished", "dateCreated", "dateModified", "pubDate"]:
+                        if k in obj and obj[k]:
+                            dt = parse_dt(str(obj[k]))
+                            if dt: found_dates.append(dt)
+                    for v in obj.values():
+                        find_dates_in_json(v)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        find_dates_in_json(item)
+            
+            find_dates_in_json(data)
         except Exception:
             continue
 
     # 3. <time> tag
-    time_tag = soup.find("time")
-    if time_tag and time_tag.get("datetime"):
-        dt = parse_dt(time_tag["datetime"])
-        if dt: return dt
+    for time_tag in soup.find_all("time"):
+        if time_tag.get("datetime"):
+            dt = parse_dt(time_tag["datetime"])
+            if dt: found_dates.append(dt)
+        elif time_tag.get_text():
+            dt = parse_dt(time_tag.get_text().strip())
+            if dt: found_dates.append(dt)
+    
+    # 4. URL에서 날짜 추출 (예: /2024/05/20/...)
+    if url:
+        url_date_match = re.search(r"/(\d{4})/(\d{1,2})/(\d{1,2})/", url)
+        if url_date_match:
+            try:
+                dt = datetime(int(url_date_match.group(1)), int(url_date_match.group(2)), int(url_date_match.group(3)), tzinfo=timezone.utc)
+                found_dates.append(dt)
+            except ValueError:
+                pass
+
+    # 5. 본문 텍스트에서 날짜 추출 (regex fallback)
+    if text:
+        # "October 7, 2025" or "Oct 7, 2025" 패턴 (영어 기사 위주)
+        month_pat = r"(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
+        date_regex = re.compile(month_pat + r"\s+\d{1,2},?\s+\d{4}", re.IGNORECASE)
+        # 상위 2000자 내에서만 탐색
+        for m in date_regex.finditer(text[:2000]):
+            dt = parse_dt(m.group(0))
+            if dt: found_dates.append(dt)
+
+    if found_dates:
+        # 발견된 날짜 중 미래의 날짜나 너무 과거(2000년 이전)는 제외
+        now = datetime.now(timezone.utc)
+        valid_dates = [d for d in found_dates if 2000 < d.year <= now.year + 1 and d < now + timedelta(days=2)]
+        if valid_dates:
+            # 기사 발행일은 보통 발견된 날짜 중 가장 이른 날짜일 가능성이 높음 (Update된 날짜가 섞일 수 있으므로)
+            # 단, meta tag나 JSON-LD에서 나온 날짜가 있으면 그것을 더 신뢰해야 함.
+            # 여기서는 단순하게 가장 작은(과거) 날짜를 선택하여 '최초 발행일'에 가깝게 추정.
+            best_date = min(valid_dates)
+            return best_date
     
     return None
 
@@ -238,7 +284,7 @@ def build_lawsuits_from_news(news_items, known_cases, lookback_days: int = 3) ->
             case_title = guess_case_title_from_article_title(article_title)
 
         # 2) 날짜 처리: 웹페이지에서 추출한 날짜 우선, 없으면 RSS 날짜 사용
-        web_date = extract_publication_date(soup)
+        web_date = extract_publication_date(soup, text=text, url=final_url)
         if web_date:
             published = web_date
             debug_log(f"Using web extracted date: {published} for {article_title[:40]}")

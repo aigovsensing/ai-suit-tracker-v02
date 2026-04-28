@@ -180,7 +180,8 @@ def render_markdown(
 
     # KPI (간결 텍스트 요약)
     lines.append("<details>")
-    lines.append(f"<summary><strong>## 📊 최근 {lookback_days}일 소송 동향 요약</strong></summary>\n")
+    lines.append(f"<summary><strong>## 📊 최근 {lookback_days}일 소송 동향 요약</strong></summary>")
+    lines.append("")
     lines.append(f"└ 📰 News: {len(lawsuits)}")
     lines.append(f"└ ⚖ Cases: {len(cl_cases)} (Docs: {recap_doc_count})")
     lines.append("</details>\n")
@@ -189,7 +190,8 @@ def render_markdown(
     if cl_cases:
         counter = Counter([c.nature_of_suit or "미확인" for c in cl_cases])
         lines.append("<details>")
-        lines.append("<summary><strong>## 📊 Nature of Suit 통계</strong></summary>\n")
+        lines.append("<summary><strong>## 📊 Nature of Suit 통계</strong></summary>")
+        lines.append("")
         lines.append("| Nature of Suit | 건수 |")
         lines.append("|---|---|")
         for k, v in counter.most_common(10):
@@ -217,7 +219,8 @@ def render_markdown(
         if top_cases:
             debug_log(f"Rendering Top 3 Copyright cases: {len(top_cases)} found")
             lines.append("<details>")
-            lines.append("<summary><strong>## 🧠 최근 \"820 Copyright\" 소송 Top 3 (업데이트 날짜 기준)</strong></summary>\n")
+            lines.append("<summary><strong>## 🧠 최근 \"820 Copyright\" 소송 Top 3 (업데이트 날짜 기준)</strong></summary>")
+            lines.append("")
             
             for idx, c in enumerate(top_cases, start=1):
                 update_date = c.recent_updates if c.recent_updates != "미확인" else ""
@@ -392,7 +395,8 @@ def render_markdown(
     # RECAP 법원 문서 (.pdf format)
     if cl_docs:
         lines.append("<details>")        
-        lines.append("<summary><strong><span style=\"font-size:2.5em; font-weight:bold;\">📄 Cases: 법원 문서 기반 (Complaint/Petition 우선)</span></strong></summary>\n")
+        lines.append("<summary><strong><span style=\"font-size:2.5em; font-weight:bold;\">📄 Cases: 법원 문서 기반 (Complaint/Petition 우선)</span></strong></summary>")
+        lines.append("")
         lines.append("| No. | 제출일⬇️ | 케이스 | 문서유형 | 법원 문서 |")
         lines.append(_md_sep(5))
 
@@ -415,7 +419,8 @@ def render_markdown(
     # 기사 주소
     if lawsuits:
         lines.append("<details>")
-        lines.append("<summary><strong><span style=\"font-size:2.5em; font-weight:bold;\">📰 News Website</span></strong></summary>\n")
+        lines.append("<summary><strong><span style=\"font-size:2.5em; font-weight:bold;\">📰 News Website</span></strong></summary>")
+        lines.append("")
         for s in lawsuits:
             lines.append(f"### {_esc(s.article_title or s.case_title)}")
             for u in s.article_urls:
@@ -424,7 +429,8 @@ def render_markdown(
 
     # 감지 레벨 척도
     lines.append("<details>")
-    lines.append("<summary><strong><span style=\"font-size:2.5em; font-weight:bold;\">📘 비인가 데이터 학습 소송 감지 레벨(0~100) 평가 척도</span></strong></summary>\n")
+    lines.append("<summary><strong><span style=\"font-size:2.5em; font-weight:bold;\">📘 비인가 데이터 학습 소송 감지 레벨(0~100) 평가 척도</span></strong></summary>")
+    lines.append("")
     lines.append("- 해당 건이 비인가 데이터 학습 소송과 얼마나 밀접한지를 표현하며 리스크 강도를 수치화한 지표입니다.")
     lines.append("- 0에 가까울수록 → 간접/주변 이슈")
     lines.append("- 100에 가까울수록 → 비인가 학습 핵심 감지 사건\n")
