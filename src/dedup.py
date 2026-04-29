@@ -169,10 +169,10 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
                 new_article_count += 1
         
         if new_article_count == 0:
-            new_news_section = "새로운 소식이 0건입니다.\n"
+            new_news_section = "\n새로운 소식이 0건입니다.\n"
         else:
             final_rows = non_skip_rows
-            new_lines = [header_line, separator_line]
+            new_lines = ["", header_line, separator_line]
             for row_idx, r in enumerate(final_rows, start=1):
                 if no_idx is not None:
                     r[no_idx] = str(row_idx)
@@ -207,10 +207,10 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
                 new_docket_count += 1
 
         if new_docket_count == 0:
-            new_recap_section = "새로운 소식이 0건입니다.\n"
+            new_recap_section = "\n새로운 소식이 0건입니다.\n"
         else:
             final_rows = non_skip_rows
-            new_lines = [header_line, separator_line]
+            new_lines = ["", header_line, separator_line]
             for row_idx, r in enumerate(final_rows, start=1):
                 if no_idx is not None:
                     r[no_idx] = str(row_idx)
@@ -235,9 +235,9 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
                 new_doc_count += 1
         
         if new_doc_count == 0:
-            new_docs_section = "새로운 법원 문서가 0건입니다.\n"
+            new_docs_section = "\n새로운 법원 문서가 0건입니다.\n"
         else:
-            new_lines = [header_line, separator_line]
+            new_lines = ["", header_line, separator_line]
             for row_idx, r in enumerate(non_skip_rows, start=1):
                 # No. 업데이트 (만약 있으면)
                 if "No." in d_headers:
@@ -316,6 +316,7 @@ def generate_consolidated_report(comments: List[dict]) -> str:
     # News 통합 출력
     lines.append("### 📰 통합 AI Suit News")
     if unique_news:
+        lines.append("")
         lines.append(meta["news_header"]); lines.append(meta["news_sep"])
         news_rows = list(unique_news.values())
         if "감지 레벨⬇️" in meta["news_cols"]:
@@ -325,12 +326,14 @@ def generate_consolidated_report(comments: List[dict]) -> str:
         for i, row in enumerate(news_rows, 1):
             if no_idx is not None: row[no_idx] = str(i)
             lines.append("| " + " | ".join(row) + " |")
-    else: lines.append("수집된 뉴스 소식이 없습니다.")
+    else: 
+        lines.append("\n수집된 뉴스 소식이 없습니다.")
     lines.append("")
 
     # Cases 통합 출력
     lines.append("### ⚖️ 통합 Cases (Courtlistener+RECAP)")
     if unique_cases:
+        lines.append("")
         lines.append(meta["case_header"]); lines.append(meta["case_sep"])
         case_rows = list(unique_cases.values())
         if "감지 레벨⬇️" in meta["case_cols"]:
@@ -340,6 +343,7 @@ def generate_consolidated_report(comments: List[dict]) -> str:
         for i, row in enumerate(case_rows, 1):
             if no_idx is not None: row[no_idx] = str(i)
             lines.append("| " + " | ".join(row) + " |")
-    else: lines.append("수집된 사건 소식이 없습니다.")
+    else: 
+        lines.append("\n수집된 사건 소식이 없습니다.")
     
     return "\n".join(lines)

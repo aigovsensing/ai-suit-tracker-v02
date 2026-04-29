@@ -260,6 +260,7 @@ def render_markdown(
     lines.append("### 📰 AI Suit News")
     if lawsuits:
         debug_log("'News' is printed.")            
+        lines.append("")
         lines.append("| No. | 기사일자 | 제목 | 소송번호 | 조건 (주요 키워드) | 소송사유 | 감지 레벨⬇️ |")
         lines.append(_md_sep(7))
 
@@ -302,6 +303,7 @@ def render_markdown(
             if d.docket_id:
                 doc_map[d.docket_id] = d
         
+        lines.append("")
         lines.append(
             "| No. | 상태 | 케이스명 | 도켓번호 | Nature | 감지 레벨⬇️ | "
             "소송이유 | AI학습관련 핵심주장 | 법적 근거 | 담당판사 | 법원 | "
@@ -446,6 +448,7 @@ def render_markdown(
     lines.append("")
 
     lines.append("### 🧮 점수 산정 기준 (비인가 데이터 학습 소송 감지 기준)")
+    lines.append("")
     lines.append("| 항목 | 조건 (주요 키워드) | 점수 |")
     lines.append("|---|---|---|")
     for name, keywords, points in DETECTION_CRITERIA:
