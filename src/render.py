@@ -24,36 +24,45 @@ def _md_sep(col_count: int) -> str:
 
 def _get_data_icon(text: str) -> str:
     """
-    대상 데이터/정보의 성격에 따른 적정 아이콘을 반환합니다.
-    (텍스트, 오디오, 이미지, 비디오, 센서, 3D Model, 기타)
+    대상 데이터/정보의 성격에 따른 적정 아이콘(이미지 배지)을 반환합니다.
+    분류: Authors/Books, Music/Recordings, Video/Film, Visual Art, News, Publishers, Voice/Likeness, Code/Software, Other
     """
     h = (text or "").lower()
     
-    # 1. 오디오
+    # 1. Authors/Books
+    if any(k in h for k in ["book", "novel", "author", "writing", "literary", "library", "shadow library", "pirat", "books3", "prose"]):
+        return "📚 ![Authors/Books](https://img.shields.io/badge/Authors%2FBooks-4b2e83?style=flat-square)"
+    
+    # 2. Music/Recordings
     if any(k in h for k in ["music", "lyrics", "audio", "song", "musical", "singer", "artist", "record", "spotify", "warner", "sony", "universal"]):
-        return "🎵"
+        return "🎵 ![Music/Recordings](https://img.shields.io/badge/Music%2FRecordings-1DB954?style=flat-square)"
     
-    # 2. 이미지
-    if any(k in h for k in ["image", "photo", "picture", "art", "style", "drawing", "illustration", "artwork", "photographer", "getty", "deviantart", "midjourney", "stable diffusion", "stock"]):
-        return "🖼️"
-    
-    # 3. 비디오
+    # 3. Video/Film
     if any(k in h for k in ["video", "youtube", "movie", "film", "netflix", "vimeo", "motion picture"]):
-        return "🎥"
+        return "🎥 ![Video/Film](https://img.shields.io/badge/Video%2FFilm-E50914?style=flat-square)"
+    
+    # 4. Visual Art
+    if any(k in h for k in ["image", "photo", "picture", "art", "style", "drawing", "illustration", "artwork", "photographer", "getty", "deviantart", "midjourney", "stable diffusion", "stock"]):
+        return "🖼️ ![Visual Art](https://img.shields.io/badge/Visual%20Art-005A9C?style=flat-square)"
         
-    # 4. 텍스트
-    if any(k in h for k in ["book", "novel", "text", "library", "shadow library", "pirat", "books3", "author", "writing", "prose", "literary", "news", "article", "journalism", "publisher", "times", "newspaper", "press", "media", "reporting", "code", "software", "programming", "github", "source code", "developer", "copilot", "git"]):
-        return "📝"
+    # 5. News
+    if any(k in h for k in ["news", "article", "journalism", "times", "newspaper", "press", "reporting"]):
+        return "📰 ![News](https://img.shields.io/badge/News-fcc200?style=flat-square&logoColor=black)"
 
-    # 5. 센서
-    if any(k in h for k in ["sensor", "iot", "detector", "radar", "lidar", "telemetry"]):
-        return "📡"
+    # 6. Publishers
+    if any(k in h for k in ["publisher", "proquest", "elsevier", "springer", "wiley", "academic", "journal", "media"]):
+        return "🏢 ![Publishers](https://img.shields.io/badge/Publishers-0077B5?style=flat-square)"
 
-    # 6. 3D Model
-    if any(k in h for k in ["3d", "model", "cad", "mesh", "stl", "obj", "unity", "unreal", "blender"]):
-        return "🧊"
+    # 7. Voice/Likeness
+    if any(k in h for k in ["voice", "likeness", "personality", "biometric", "avatar", "deepfake", "speech", "vocal", "name and likeness"]):
+        return "🗣️ ![Voice/Likeness](https://img.shields.io/badge/Voice%2FLikeness-FF6F61?style=flat-square)"
 
-    return "❗"  # 기타 (느낌표)
+    # 8. Code/Software
+    if any(k in h for k in ["code", "software", "programming", "github", "source code", "developer", "copilot", "git"]):
+        return "💻 ![Code/Software](https://img.shields.io/badge/Code%2FSoftware-24292e?style=flat-square)"
+
+    # 9. Other (Fallback)
+    return "📁 ![Other](https://img.shields.io/badge/Other-grey?style=flat-square)"
 
 
 def _mdlink(label: str, url: str) -> str:
@@ -199,6 +208,26 @@ def render_markdown(
         # 총 개수 추가
         total_count = sum(counter.values())
         lines.append(f"| **총개수** | **{total_count}** |")            
+        lines.append("</details>\n")
+
+    # Target Data 통계 (신규 추가)
+    if cl_cases or lawsuits:
+        data_categories = []
+        for c in cl_cases:
+            data_categories.append(_get_data_category(f"{c.case_name} {c.nature_of_suit} {c.cause} {c.extracted_causes} {c.extracted_ai_snippet}"))
+        for s in lawsuits:
+            data_categories.append(_get_data_category(f"{s.article_title} {s.case_title} {s.reason}"))
+            
+        category_counter = Counter(data_categories)
+        lines.append("<details>")
+        lines.append("<summary><strong>## 📊 Target Data (학습 데이터) 통계</strong></summary>")
+        lines.append("")
+        lines.append("| Item | 건수 |")
+        lines.append("|---|---|")
+        # 사용자가 제시한 항목 순서 또는 건수 순으로 출력
+        for k, v in category_counter.most_common():
+            lines.append(f"| {k} | **{v}** |")
+        lines.append(f"| **총개수** | **{sum(category_counter.values())}** |")
         lines.append("</details>\n")
 
     # AI 소송 Top3 (업데이트 날짜 기준)
@@ -466,12 +495,14 @@ def render_markdown(
 def _get_data_category(text: str) -> str:
     """대상 데이터의 카테고리를 텍스트 기반으로 추정합니다."""
     h = (text or "").lower()
-    if any(k in h for k in ["music", "lyrics", "audio", "song", "musical"]): return "오디오"
-    if any(k in h for k in ["image", "photo", "picture", "art", "drawing", "illustration"]): return "이미지"
-    if any(k in h for k in ["video", "youtube", "movie", "film"]): return "비디오"
-    if any(k in h for k in ["sensor", "iot", "detector", "radar", "lidar"]): return "센서"
-    if any(k in h for k in ["3d", "model", "cad", "mesh", "stl"]): return "3D Model"
-    if any(k in h for k in ["book", "novel", "text", "news", "article", "code", "software"]): return "텍스트"
-    return "기타"
+    if any(k in h for k in ["book", "novel", "author", "writing", "literary", "library", "shadow library", "pirat", "books3", "prose"]): return "Authors/Books"
+    if any(k in h for k in ["music", "lyrics", "audio", "song", "musical", "singer", "artist", "record", "spotify", "warner", "sony", "universal"]): return "Music/Recordings"
+    if any(k in h for k in ["video", "youtube", "movie", "film", "netflix", "vimeo", "motion picture"]): return "Video/Film"
+    if any(k in h for k in ["image", "photo", "picture", "art", "style", "drawing", "illustration", "artwork", "photographer", "getty", "deviantart", "midjourney", "stable diffusion", "stock"]): return "Visual Art"
+    if any(k in h for k in ["news", "article", "journalism", "times", "newspaper", "press", "reporting"]): return "News"
+    if any(k in h for k in ["publisher", "proquest", "elsevier", "springer", "wiley", "academic", "journal", "media"]): return "Publishers"
+    if any(k in h for k in ["voice", "likeness", "personality", "biometric", "avatar", "deepfake", "speech", "vocal", "name and likeness"]): return "Voice/Likeness"
+    if any(k in h for k in ["code", "software", "programming", "github", "source code", "developer", "copilot", "git"]): return "Code/Software"
+    return "Other"
 
 
