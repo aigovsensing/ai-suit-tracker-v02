@@ -189,30 +189,38 @@ def main() -> None:
 
     # 4-2) Gemini를 통한 핵심 동향 요약 추가 (첫 번째 댓글로 등록)
     # [Mission] 첫 번째 리포트(댓글이 없는 경우)이거나 새로운 소식이 있는 경우 Gemini 분석 수행
-    is_first_report = (len(current_comments) == 0)
-    
-    # [FIX] 이미 Gemini 동향 요약 또는 안내 메시지가 있는지 확인 (중복 출력 방지)
-    trend_already_exists = any("소송센싱 주요 동향 현황" in (c.get("body") or "") for c in current_comments)
-
-    if not trend_already_exists:
-        trend_lookback = os.environ.get("GEMINI_AISUIT_TREND_DAYS")
-        if trend_lookback:
+    trend_lookback = os.environ.get("GEMINI_AISUIT_TREND_DAYS")
+    if trend_lookback:
+        try:
+            # 숫자가 아닌 값이 들어올 경우(예: 'true', 'on') lookback_days를 기본값으로 사용
             try:
                 trend_days = int(trend_lookback)
+            except ValueError:
+                trend_days = lookback_days
+                debug_log(f"GEMINI_AISUIT_TREND_DAYS가 숫자가 아니므로 LOOKBACK_DAYS({lookback_days})를 사용합니다.")
+
+            # [FIX] 해당 기간(trend_days)의 동향 요약이 이미 있는지 확인 (중복 출력 방지 및 설정 변경 반영)
+            trend_title_marker = f"{trend_days}일간의 소송센싱 주요 동향 현황"
+            trend_already_exists = any(trend_title_marker in (c.get("body") or "") for c in current_comments)
+
+            if not trend_already_exists:
                 debug_log(f"Gemini 동향 요약 기능 활성화 (설정 기간: {trend_days}일)")
                 trend_summary = generate_trend_summary(lawsuits, cl_cases, trend_days)
                 if trend_summary:
                     trend_comment_body = f"## 🗓️ {trend_days}일간의 소송센싱 주요 동향 현황 (with Gemini)\n\n{trend_summary}"
                     create_comment(owner, repo, gh_token, issue_no, trend_comment_body)
                     debug_log(f"Issue #{issue_no} Gemini 동향 요약 댓글 업로드 완료")
-            except Exception as e:
-                debug_log(f"Gemini 동향 요약 생성 중 오류 발생: {e}")
-        else:
+        except Exception as e:
+            debug_log(f"Gemini 동향 요약 생성 중 오류 발생: {e}")
+    else:
+        # 이미 안내 메시지나 동향 요약이 있는지 확인
+        trend_any_exists = any("소송센싱 주요 동향 현황" in (c.get("body") or "") for c in current_comments)
+        if not trend_any_exists:
             # 기능 비활성화 시 안내 메시지 출력
             skip_message = (
                 "> [!NOTE]\n"
                 "> **🤖 Gemini 인텔리전트 동향 요약 기능 안내**\n"
-                "> \"3일간의 소송센싱 주요 동향 현황 (with Gemini)\"이 Skip 처리되었습니다. \n"
+                f"> \"{lookback_days}일간의 소송센싱 주요 동향 현황 (with Gemini)\"이 Skip 처리되었습니다. \n"
                 "> 이 기능을 사용하려면 [README.md](./README.md) 파일을 참고하여 관련 환경변수를 추가해 주세요. ✨"
             )
             create_comment(owner, repo, gh_token, issue_no, skip_message)
