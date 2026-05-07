@@ -2,6 +2,30 @@ import os
 import google.generativeai as genai
 from .utils import debug_log
 
+def get_gemini_model_name() -> str:
+    """
+    환경 변수에서 사용할 Gemini 모델명을 가져옵니다. 기본값은 'gemini-1.5-flash'입니다.
+    """
+    return os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
+
+def get_gemini_model_display_name() -> str:
+    """
+    출력용으로 친숙한 모델 이름을 반환합니다.
+    """
+    model_name = get_gemini_model_name()
+    if "gemini-1.5-flash" in model_name.lower() or "gemini-flash" in model_name.lower():
+        return "Gemini 1.5 Flash"
+    if "gemini-1.5-pro" in model_name.lower() or "gemini-pro" in model_name.lower():
+        return "Gemini 1.5 Pro"
+    if "gemini-2.0-flash" in model_name.lower():
+        return "Gemini 2.0 Flash"
+    
+    # 환경변수에 직접 'Gemini 2.5 Flash' 처럼 넣었을 경우를 위해
+    if "-" not in model_name:
+        return model_name
+        
+    return "Gemini"
+
 def get_gemini_summary(prompt: str) -> str:
     """
     Gemini API를 사용하여 텍스트 요약을 생성합니다.
@@ -23,10 +47,11 @@ def get_gemini_summary(prompt: str) -> str:
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
 
-        # 모델 호출 (원래 동작하던 'gemini-flash-latest' 명칭 사용 및 도구 비활성화)
+        # 모델 호출
         try:
+            model_name = get_gemini_model_name()
             model = genai.GenerativeModel(
-                model_name="gemini-flash-latest",
+                model_name=model_name,
                 safety_settings=safety_settings
             )
             response = model.generate_content(prompt)

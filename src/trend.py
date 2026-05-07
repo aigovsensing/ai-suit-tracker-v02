@@ -1,7 +1,7 @@
 from typing import List
 from .extract import Lawsuit
 from .courtlistener import CLCaseSummary
-from .gemini import get_gemini_summary
+from .gemini import get_gemini_summary, get_gemini_model_display_name
 from .utils import debug_log
 
 def generate_trend_summary(lawsuits: List[Lawsuit], cl_cases: List[CLCaseSummary], lookback_days: int) -> str:
@@ -68,6 +68,7 @@ def generate_daily_report_from_data(news_data: dict, case_data: dict) -> str:
         # r[2]는 케이스명, r[3]은 도켓번호, r[4]는 Nature, r[6]은 소송이유, r[5]는 감지레벨
         case_lines.append(f"- {r[2]} (도켓: {r[3]}) | Nature: {r[4]} | 소송이유: {r[6]} (감지레벨: {r[5]})")
 
+    model_info = get_gemini_model_display_name()
     prompt = f"""
 당신은 AI 법률 및 저작권 전문 분석가입니다. '오늘(오늘 하루 동안 수합된 리포트)' 수집된 다음의 AI 관련 뉴스 및 소송 사건들을 분석하여, 핵심 내용을 요약하는 "당일 신규/업데이트 소송건 요약 보고서"를 작성해주세요.
 
@@ -79,7 +80,7 @@ def generate_daily_report_from_data(news_data: dict, case_data: dict) -> str:
 {chr(10).join(case_lines) if case_lines else "오늘 수집된 소송 사건이 없습니다."}
 
 [작성 지침]
-1. 제목은 "## 🧠 당일 신규/업데이트 소송건 요약 보고서 (Gemini)"로 시작해주세요.
+1. 제목은 "## 🧠 당일 신규/업데이트 소송건 요약 보고서 ({model_info})"로 시작해주세요.
 2. 오늘 발생한 가장 중요한 핵심 이슈를 2~3문장으로 먼저 요약해주세요.
 3. 주요 뉴스 및 소송 사건들을 그룹화하거나 개별적으로 분석하여 가독성 있게 정리해주세요.
 4. 기술적/법적 쟁점이 있는 경우 간략히 언급해주세요.
