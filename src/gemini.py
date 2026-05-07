@@ -58,20 +58,31 @@ def get_gemini_summary(prompt: str) -> str:
             
             # 응답 검증 및 텍스트 추출
             if response.candidates and response.candidates[0].content.parts:
-                # 모델 버전 및 서비스 티어 정보 추출
-                model_version = getattr(response, 'model_version', '알 수 없음')
-                usage_metadata = getattr(response, 'usage_metadata', None)
+                # 모델 버전 및 서비스 티어 정보 추출 (to_dict()를 통한 로버스트한 접근)
+                resp_dict = {}
+                try:
+                    if hasattr(response, 'to_dict'):
+                        resp_dict = response.to_dict()
+                except Exception:
+                    pass
+
+                # 모델 버전 추출 (modelVersion 또는 model_version)
+                model_version = resp_dict.get('model_version') or resp_dict.get('modelVersion') or model_name
+                
+                # 서비스 티어 추출 (usageMetadata.serviceTier 또는 usage_metadata.service_tier)
+                usage = resp_dict.get('usage_metadata') or resp_dict.get('usageMetadata') or {}
                 service_tier = '알 수 없음'
                 
-                if usage_metadata:
-                    # 서비스 티어 추출 (문자열 또는 Enum 처리)
-                    raw_tier = getattr(usage_metadata, 'service_tier', '알 수 없음')
-                    if hasattr(raw_tier, 'name'):  # Enum인 경우 (.name으로 문자열 취득)
-                        service_tier = raw_tier.name.capitalize()
-                    elif isinstance(raw_tier, str):
+                raw_tier = usage.get('service_tier') or usage.get('serviceTier')
+                if raw_tier:
+                    if isinstance(raw_tier, str):
                         service_tier = raw_tier.capitalize()
                     else:
-                        service_tier = str(raw_tier).capitalize()
+                        # Enum 등으로 넘어올 경우 처리
+                        service_tier = str(getattr(raw_tier, 'name', raw_tier)).capitalize()
+                elif usage:
+                    # 사용량 정보는 있으나 티어가 명시되지 않은 경우 기본값
+                    service_tier = "Standard"
 
                 # 결과 상단에 정보 추가
                 header = f"모델 정보: {model_version}\n서비스 티어: {service_tier}\n\n"
