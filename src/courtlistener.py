@@ -762,3 +762,19 @@ def build_case_summary_from_docket_id(docket_id: int) -> Optional[CLCaseSummary]
         defendant=defendant,
     )
 
+def get_search_count(query: str, params: Optional[dict] = None) -> int:
+    """
+    주어진 쿼리에 대한 전체 결과 건수를 반환합니다.
+    """
+    p = {
+        "q": query,
+        "type": "r",
+        "page_size": 1,
+    }
+    if params:
+        p.update(params)
+    
+    data = _get(SEARCH_URL, params=p)
+    if data:
+        return data.get("count", 0)
+    return 0

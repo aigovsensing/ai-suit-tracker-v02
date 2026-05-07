@@ -8,7 +8,6 @@ def generate_trend_summary(lawsuits: List[Lawsuit], cl_cases: List[CLCaseSummary
     """
     수집된 뉴스 및 소송 데이터를 기반으로 Gemini를 통해 주요 동향 요약을 생성합니다.
     """
-    
     # 데이터 요약 구성 (출처 URL 포함)
     news_context = ""
     for idx, s in enumerate(lawsuits, 1):
@@ -23,6 +22,7 @@ def generate_trend_summary(lawsuits: List[Lawsuit], cl_cases: List[CLCaseSummary
         docket_url = f"https://www.courtlistener.com/docket/{c.docket_id}/{slug}/"
         case_context += f"{idx}. {c.recent_updates} | {c.case_name} | Nature: {c.nature_of_suit} | Snippet: {c.extracted_ai_snippet or ''} | 출처: {docket_url}\n"
 
+    model_info = get_gemini_model_display_name()
     prompt = f"""
 당신은 AI 법률 및 저작권 분야의 전문 분석가입니다. 최근 {lookback_days}일 동안 발생한 AI 모델 학습 관련 데이터 이용 현황 및 주요 소송 건들을 객관적으로 분석하여 전문적인 보고서를 작성해주세요.
 
@@ -34,7 +34,7 @@ def generate_trend_summary(lawsuits: List[Lawsuit], cl_cases: List[CLCaseSummary
 5. 삼성전자 관련 영향 분석: 삼성전자의 생성형 AI 모델(가우스 등), 서비스 또는 하드웨어 제품(갤럭시 AI 등)에 미칠 수 있는 영향, 기술적/법적 대비 사항 또는 전략적 고려 요소
 
 [작성 지침]
-1. 별도의 대제목(예: "## {lookback_days}일간의...")은 생략하고 바로 '1. 개요'부터 작성해주세요.
+1. 제목은 "## 🗓️ {lookback_days}일간의 소송센싱 주요 동향 현황 (with {model_info})"으로 시작해주세요.
 2. 사실에 기반하여 객관적이고 차분한 분석 톤을 유지해주세요.
 3. 각 소송 항목에는 가능한 경우 제공된 데이터의 '출처'를 마크다운 링크 형식으로 포함해주세요 (예: [출처 이름](URL)).
 4. 제공된 데이터를 우선적으로 활용하되, 학습된 지식과 최신 정보를 바탕으로 내용을 심도 있게 구성해주세요.

@@ -22,6 +22,7 @@ from .courtlistener import (
 )
 from .queries import COURTLISTENER_QUERIES
 from .trend import generate_trend_summary
+from .gemini import get_gemini_model_display_name
 
 def main() -> None:
     # 0) 환경 변수 로드
@@ -207,10 +208,7 @@ def main() -> None:
                 debug_log(f"Gemini 동향 요약 기능 활성화 (설정 기간: {trend_days}일)")
                 trend_summary = generate_trend_summary(lawsuits, cl_cases, trend_days)
                 if trend_summary:
-                    from .gemini import get_gemini_model_display_name
-                    model_info = get_gemini_model_display_name()
-                    trend_comment_body = f"## 🗓️ {trend_days}일간의 소송센싱 주요 동향 현황 (with {model_info})\n\n{trend_summary}"
-                    create_comment(owner, repo, gh_token, issue_no, trend_comment_body)
+                    create_comment(owner, repo, gh_token, issue_no, trend_summary)
                     debug_log(f"Issue #{issue_no} Gemini 동향 요약 댓글 업로드 완료")
         except Exception as e:
             debug_log(f"Gemini 동향 요약 생성 중 오류 발생: {e}")
@@ -218,7 +216,6 @@ def main() -> None:
         # 이미 안내 메시지나 동향 요약이 있는지 확인
         trend_any_exists = any("소송센싱 주요 동향 현황" in (c.get("body") or "") for c in current_comments)
         if not trend_any_exists:
-            from .gemini import get_gemini_model_display_name
             model_info = get_gemini_model_display_name()
             skip_message = (
                 "> [!NOTE]\n"
@@ -229,7 +226,18 @@ def main() -> None:
             create_comment(owner, repo, gh_token, issue_no, skip_message)
             debug_log("Gemini 동향 요약 Skip 안내 메시지 등록 완료")
 
-    # 4-3) 메인 리포트 등록 (두 번째 댓글로 등록)
+    # 4-3) 통계 및 추이 리포트 추가 (옵션)
+    if os.environ.get("GENERATE_STATS") == "1":
+        from .stats import generate_trend_report
+        # 통계 리포트가 이미 오늘 등록되었는지 확인 (중복 방지)
+        stats_already_exists = any("AI 소송 발생 건수 추이 보고서" in (c.get("body") or "") for c in current_comments)
+        if not stats_already_exists:
+            debug_log("통계 및 추이 리포트 생성 중...")
+            stats_report = generate_trend_report()
+            create_comment(owner, repo, gh_token, issue_no, stats_report)
+            debug_log(f"Issue #{issue_no} 통계 리포트 댓글 업로드 완료")
+
+    # 4-4) 메인 리포트 등록 (마지막 댓글로 등록)
     comment_body = f"\n\n{md}"
     create_comment(owner, repo, gh_token, issue_no, comment_body)
     debug_log(f"Issue #{issue_no} 메인 리포트 댓글 업로드 완료")

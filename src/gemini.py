@@ -6,7 +6,7 @@ def get_gemini_model_name() -> str:
     """
     환경 변수에서 사용할 Gemini 모델명을 가져옵니다. 기본값은 'gemini-1.5-flash'입니다.
     """
-    return os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
+    return os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 
 def get_gemini_model_display_name() -> str:
     """
@@ -21,7 +21,7 @@ def get_gemini_model_display_name() -> str:
         return "Gemini 2.0 Flash"
     
     # 환경변수에 직접 'Gemini 2.5 Flash' 처럼 넣었을 경우를 위해
-    if "-" not in model_name:
+    if "-" not in model_name and not model_name.islower():
         return model_name
         
     return "Gemini"
@@ -58,7 +58,24 @@ def get_gemini_summary(prompt: str) -> str:
             
             # 응답 검증 및 텍스트 추출
             if response.candidates and response.candidates[0].content.parts:
-                return response.text
+                # 모델 버전 및 서비스 티어 정보 추출
+                model_version = getattr(response, 'model_version', '알 수 없음')
+                usage_metadata = getattr(response, 'usage_metadata', None)
+                service_tier = '알 수 없음'
+                
+                if usage_metadata:
+                    # 서비스 티어 추출 (문자열 또는 Enum 처리)
+                    raw_tier = getattr(usage_metadata, 'service_tier', '알 수 없음')
+                    if hasattr(raw_tier, 'name'):  # Enum인 경우 (.name으로 문자열 취득)
+                        service_tier = raw_tier.name.capitalize()
+                    elif isinstance(raw_tier, str):
+                        service_tier = raw_tier.capitalize()
+                    else:
+                        service_tier = str(raw_tier).capitalize()
+
+                # 결과 상단에 정보 추가
+                header = f"모델 정보: {model_version}\n서비스 티어: {service_tier}\n\n"
+                return header + response.text
             else:
                 debug_log(f"Gemini 응답이 차단되거나 후보가 없습니다: {response.prompt_feedback if hasattr(response, 'prompt_feedback') else 'No candidates'}")
                 return ""
