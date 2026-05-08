@@ -220,7 +220,7 @@ def main() -> None:
             skip_message = (
                 "> [!NOTE]\n"
                 "> **🤖 Gemini 인텔리전트 동향 요약 기능 안내**\n"
-                f"> \"🗓️ (조간뉴스) {lookback_days}일간의 소송센싱 주요 동향 현황 (with {model_info})\"이 Skip 처리되었습니다. \n"
+                f"> \"🗓️ (조간뉴스) {lookback_days}일간의 소송센싱 주요 동향 현황\"이 Skip 처리되었습니다. \n"
                 "> 이 기능을 사용하려면 [README.md](./README.md) 파일을 참고하여 관련 환경변수를 추가해 주세요. ✨"
             )
             create_comment(owner, repo, gh_token, issue_no, skip_message)
