@@ -36,7 +36,8 @@ def get_gemini_summary(prompt: str) -> str:
         return ""
 
     try:
-        genai.configure(api_key=api_key)
+        # REST 전송 방식을 사용하여 v1beta의 추가 메타데이터 필드를 더 안정적으로 가져오도록 설정
+        genai.configure(api_key=api_key, transport='rest')
         
         # 안전 설정 (HARM_CATEGORY_ prefix 기반)
         # 법률 데이터 분석 중 차단을 방지하기 위해 최소화된 필터를 유지합니다.
@@ -66,17 +67,38 @@ def get_gemini_summary(prompt: str) -> str:
                 except Exception:
                     pass
 
-                # 1) 모델 버전 추출
-                # 직접 속성(model_version) -> dict(model_version) -> dict(modelVersion) -> model_name 순서
-                model_version = getattr(response, 'model_version', None) or resp_dict.get('model_version') or resp_dict.get('modelVersion') or model_name
+                # 1) 모델 버전 추출 (최대한 다양한 경로 시도)
+                model_version = None
                 
+                # 직접 속성 확인
+                if hasattr(response, 'model_version'):
+                    model_version = response.model_version
+                
+                # 내부 _result 객체 확인 (SDK 내부 proto 메시지)
+                if not model_version and hasattr(response, '_result'):
+                    model_version = getattr(response._result, 'model_version', None)
+                
+                # dict에서 확인
+                if not model_version:
+                    model_version = resp_dict.get('model_version') or resp_dict.get('modelVersion')
+                
+                # 최후의 수단: model_name 사용
+                if not model_version:
+                    model_version = model_name
+
                 # 2) 서비스 티어 추출
                 service_tier = '알 수 없음'
                 
-                # 직접 속성 확인 (usage_metadata.service_tier)
+                # 직접 속성 확인
                 usage_obj = getattr(response, 'usage_metadata', None)
                 if usage_obj:
                     service_tier = getattr(usage_obj, 'service_tier', None) or getattr(usage_obj, 'serviceTier', None)
+                
+                # 내부 _result.usage_metadata 확인
+                if (not service_tier or str(service_tier).lower() == 'none') and hasattr(response, '_result'):
+                    usage_proto = getattr(response._result, 'usage_metadata', None)
+                    if usage_proto:
+                        service_tier = getattr(usage_proto, 'service_tier', None)
                 
                 # dict에서 확인
                 if not service_tier or str(service_tier).lower() == 'none':
@@ -89,7 +111,7 @@ def get_gemini_summary(prompt: str) -> str:
                 elif resp_dict.get('usage_metadata') or resp_dict.get('usageMetadata'):
                     service_tier = "Standard"
 
-                debug_log(f"Gemini Metadata 추출 완료 - 모델 버전: {model_version}, 티어: {service_tier}")
+                debug_log(f"Gemini Metadata 추출 결과 - model_version: {model_version}, service_tier: {service_tier}")
 
                 # 결과 상단에 정보 추가
                 header = f"모델 정보: {model_version}\n서비스 티어: {service_tier}\n\n"
