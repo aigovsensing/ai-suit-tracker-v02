@@ -58,7 +58,7 @@ def get_gemini_summary(prompt: str) -> str:
             
             # 응답 검증 및 텍스트 추출
             if response.candidates and response.candidates[0].content.parts:
-                # 모델 버전 및 서비스 티어 정보 추출 (to_dict()를 통한 로버스트한 접근)
+                # 모델 버전 및 서비스 티어 정보 추출 (to_dict() 및 직접 속성 접근 병용)
                 resp_dict = {}
                 try:
                     if hasattr(response, 'to_dict'):
@@ -66,23 +66,30 @@ def get_gemini_summary(prompt: str) -> str:
                 except Exception:
                     pass
 
-                # 모델 버전 추출 (modelVersion 또는 model_version)
-                model_version = resp_dict.get('model_version') or resp_dict.get('modelVersion') or model_name
+                # 1) 모델 버전 추출
+                # 직접 속성(model_version) -> dict(model_version) -> dict(modelVersion) -> model_name 순서
+                model_version = getattr(response, 'model_version', None) or resp_dict.get('model_version') or resp_dict.get('modelVersion') or model_name
                 
-                # 서비스 티어 추출 (usageMetadata.serviceTier 또는 usage_metadata.service_tier)
-                usage = resp_dict.get('usage_metadata') or resp_dict.get('usageMetadata') or {}
+                # 2) 서비스 티어 추출
                 service_tier = '알 수 없음'
                 
-                raw_tier = usage.get('service_tier') or usage.get('serviceTier')
-                if raw_tier:
-                    if isinstance(raw_tier, str):
-                        service_tier = raw_tier.capitalize()
-                    else:
-                        # Enum 등으로 넘어올 경우 처리
-                        service_tier = str(getattr(raw_tier, 'name', raw_tier)).capitalize()
-                elif usage:
-                    # 사용량 정보는 있으나 티어가 명시되지 않은 경우 기본값
+                # 직접 속성 확인 (usage_metadata.service_tier)
+                usage_obj = getattr(response, 'usage_metadata', None)
+                if usage_obj:
+                    service_tier = getattr(usage_obj, 'service_tier', None) or getattr(usage_obj, 'serviceTier', None)
+                
+                # dict에서 확인
+                if not service_tier or str(service_tier).lower() == 'none':
+                    usage_dict = resp_dict.get('usage_metadata') or resp_dict.get('usageMetadata') or {}
+                    service_tier = usage_dict.get('service_tier') or usage_dict.get('serviceTier')
+                
+                # 최종 포맷팅 및 기본값 처리
+                if service_tier and str(service_tier).lower() != 'none':
+                    service_tier = str(service_tier).capitalize()
+                elif resp_dict.get('usage_metadata') or resp_dict.get('usageMetadata'):
                     service_tier = "Standard"
+
+                debug_log(f"Gemini Metadata 추출 완료 - 모델 버전: {model_version}, 티어: {service_tier}")
 
                 # 결과 상단에 정보 추가
                 header = f"모델 정보: {model_version}\n서비스 티어: {service_tier}\n\n"
