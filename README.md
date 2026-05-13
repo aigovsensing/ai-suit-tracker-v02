@@ -83,7 +83,11 @@ Gemini API를 사용하여 리포트의 가독성과 분석 품질을 높이는 
 * **지원 모델:** **Imagen 4** (Fast, Standard) 및 **Gemini 2.5 Flash Image** 등
 * **특이 사항:** 무료 티어로 생성된 모든 이미지에는 **SynthID 워터마크**가 포함됩니다.
 
-#### 2) API 무료 티어 및 할당량 (Quota)
+#### 2) 텍스트 생성(Gemini) 사용 권한
+* **지원 모델:** **Gemini 2.5 Flash** 및 **Flash-Lite** 등
+* **특이 사항:** 2026년 4월 정책 업데이트로 **Gemini Pro** 이상급 모델은 유료/선불 계정 위주로 제공되며, **Flash 모델**은 무료 티어에서 여전히 높은 성능과 넉넉한 쿼터를 제공합니다.
+
+#### 3) API 무료 티어 및 할당량 (Quota)
 | 구분 | Gemini 2.5 Flash / Flash-Lite | Imagen 4 (API) |
 | --- | --- | --- |
 | **분당 요청수 (RPM)** | 15 RPM | 5 RPM |
