@@ -3,232 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Lawsuit Radar - Intelligent Litigation Tracking</title>
+    <title>AI Lawsuit Radar | Intelligent Litigation Intelligence</title>
+    <meta name="description" content="AI Lawsuit Radar tracks AI-related litigation, copyright disputes, and training data unauthorized usage in real-time using Gemini AI and CourtListener.">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="bg-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </div>
-    
-    <nav class="main-nav">
+    <div class="bg-mesh"></div>
+    <div class="glow-orb" style="top: -10%; right: -10%;"></div>
+    <div class="glow-orb" style="bottom: 20%; left: -10%; background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);"></div>
+
+    <nav class="main-nav" id="navbar">
         <div class="nav-container">
-            <div class="nav-logo">
-                <i class="fas fa-radar"></i> AI Lawsuit Radar
-            </div>
+            <a href="#" class="nav-logo">
+                <i class="fas fa-satellite-dish"></i> AI Lawsuit Radar
+            </a>
             <ul class="nav-links">
                 <li><a href="#features">Features</a></li>
-                <li><a href="#gallery">Preview</a></li>
+                <li><a href="#preview">Preview</a></li>
                 <li><a href="#architecture">Architecture</a></li>
                 <li><a href="#setup">Setup</a></li>
                 <li><a href="https://github.com/aigovsensing/ai-suit-tracker-v02/issues" target="_blank" class="nav-btn-demo">DEMO</a></li>
                 <li><a href="manual/guide.html" class="nav-btn">User Guide</a></li>
-                <li><a href="https://github.com/aigovsensing/ai-suit-tracker-v02" target="_blank"><i class="fab fa-github"></i></a></li>
             </ul>
         </div>
     </nav>
 
-    <div class="container">
+    <main>
         <!-- Hero Section -->
-        <header>
-            <div class="hero-tag">AI Lawsuit Radar v1.5</div>
-            <h1>AI Lawsuit Radar</h1>
-            <p class="hero-desc">
-                AI 모델 학습을 위한 데이터 무단 사용 및 저작권 소송을 실시간으로 추적하고 분석하는 인텔리전트 자동화 도구입니다.
-            </p>
-            <div class="cta-buttons">
-                <a href="#features" class="btn btn-primary">핵심 기능 보기</a>
-                <a href="https://github.com/aigovsensing/ai-suit-tracker-v02" class="btn btn-secondary">GitHub 저장소</a>
+        <section class="hero">
+            <div class="reveal">
+                <div class="hero-badge">v1.5 Enterprise Ready</div>
+                <h1>Intelligence for the <br><span style="color: var(--primary);">AI Litigation Era</span></h1>
+                <p>
+                    AI 모델 학습을 위한 데이터 무단 사용 및 저작권 소송을 실시간으로 추적하고 분석하는 고성능 인텔리전트 자동화 도구입니다. 리스크를 사전에 감지하고 법적 대응력을 강화하세요.
+                </p>
+                <div class="hero-cta">
+                    <a href="#features" class="btn btn-primary">Get Started <i class="fas fa-arrow-right"></i></a>
+                    <a href="https://github.com/aigovsensing/ai-suit-tracker-v02" class="btn btn-secondary"><i class="fab fa-github"></i> Repository</a>
+                </div>
             </div>
-        </header>
+        </section>
 
         <!-- Features Section -->
         <section id="features">
-            <div class="section-title">
-                <h2>실시간 모니터링 & 지능형 분석</h2>
-                <p>단순한 수집을 넘어, 법률적 맥락을 파악하고 리스크를 점수화합니다.</p>
+            <div class="section-header reveal">
+                <span>Capabilities</span>
+                <h2>Real-time Monitoring & Analysis</h2>
+                <p>단순한 데이터 수집을 넘어 법률적 맥락을 파악하고 정밀한 리스크 점수를 산출합니다.</p>
             </div>
             <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-gavel"></i></div>
-                    <h3>CourtListener 연동</h3>
-                    <p>미국 연방법원(PACER/RECAP) 데이터를 실시간으로 조회하여 고소장(Complaint) 및 주요 법원 문서를 수집합니다. 매 시간마다 새로운 법적 문서를 탐색하여 즉각적인 리포팅을 지원합니다.</p>
+                <div class="feature-card reveal" style="transition-delay: 0.1s;">
+                    <div class="feature-icon"><i class="fas fa-scale-balanced"></i></div>
+                    <h3>Legal Intelligence</h3>
+                    <p>미국 연방법원(PACER) 데이터를 실시간 조회하여 AI 학습 관련 최신 고소장을 즉각 수집하고 분석합니다.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-newspaper"></i></div>
-                    <h3>뉴스 기반 보강</h3>
-                    <p>RSS 피드를 통해 전 세계 AI 소송 뉴스를 트래킹합니다. 단순 기사 수집뿐만 아니라, 기사 내용에서 관련 사건번호(Docket)를 추출하여 법원 데이터와 크로스 체크를 수행합니다.</p>
+                <div class="feature-card reveal" style="transition-delay: 0.2s;">
+                    <div class="feature-icon"><i class="fas fa-microchip"></i></div>
+                    <h3>Gemini AI Powered</h3>
+                    <p>Google Gemini 1.5 Pro를 통해 복잡한 법률 본문을 핵심 요약하고 의미론적 중복을 완벽하게 필터링합니다.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
-                    <h3>Gemini AI 분석</h3>
-                    <p>LLM(Gemini 1.5)을 활용하여 복잡한 법률 문서를 요약합니다. 특히 '의미론적 중복 제거' 기술을 통해 제목은 다르지만 내용은 동일한 사건들을 지능적으로 걸러내어 리포트의 피로도를 낮춥니다.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                    <h3>리스크 레벨링</h3>
-                    <p>Nature of Suit 820(저작권) 코드와 'train', 'training' 등의 키워드 조합을 기반으로 리스크를 0~100점 사이로 산정합니다. 핵심적인 AI 학습 저작권 소송은 최우선 순위로 리포팅됩니다.</p>
+                <div class="feature-card reveal" style="transition-delay: 0.3s;">
+                    <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
+                    <h3>Risk Scoring</h3>
+                    <p>저작권(820) 코드와 'training' 키워드 가중치를 조합하여 0-100점 사이의 정밀한 리스크 등급을 제공합니다.</p>
                 </div>
             </div>
         </section>
 
-        <!-- Gallery Section (New) -->
-        <section id="gallery">
-            <div class="section-title">
-                <h2>App Preview</h2>
-                <p>GitHub 이슈, Slack 알림, Gemini 분석 리포트의 실제 출력 예시입니다.</p>
+        <!-- Preview Section -->
+        <section id="preview">
+            <div class="section-header reveal">
+                <span>Preview</span>
+                <h2>Dashboard & Reports</h2>
+                <p>다양한 채널로 제공되는 실시간 분석 리포트의 실제 모습입니다.</p>
             </div>
-            <div class="gallery-grid">
-                <div class="gallery-item">
-                    <div class="gallery-img-wrapper">
-                        <img src="img/github_issue.png" alt="GitHub Issue Report">
+            <div class="gallery-container">
+                <div class="gallery-item reveal">
+                    <div class="img-wrapper">
+                        <img src="img/github_issue.png" alt="GitHub Report">
                     </div>
-                    <div class="gallery-caption">GitHub Issue 상세 리포트</div>
-                </div>
-                <div class="gallery-item">
-                    <div class="gallery-img-wrapper">
-                        <img src="img/slack_mobile.png" alt="Slack Mobile Notification">
+                    <div class="gallery-info">
+                        <h4>GitHub Issue Report</h4>
                     </div>
-                    <div class="gallery-caption">Slack 실시간 알림 (모바일)</div>
                 </div>
-                <div class="gallery-item">
-                    <div class="gallery-img-wrapper">
-                        <img src="img/gemini_report.png" alt="Gemini Trend Summary">
+                <div class="gallery-item reveal">
+                    <div class="img-wrapper">
+                        <img src="img/slack_mobile.png" alt="Slack Notification">
                     </div>
-                    <div class="gallery-caption">Gemini 지능형 동향 분석</div>
-                </div>
-                <div class="gallery-item">
-                    <div class="gallery-img-wrapper">
-                        <img src="img/courtlistener_data.png" alt="CourtListener Data Extraction">
+                    <div class="gallery-info">
+                        <h4>Slack Mobile Alert</h4>
                     </div>
-                    <div class="gallery-caption">CourtListener 데이터 수집 및 가공</div>
                 </div>
-            </div>
-        </section>
-
-        <!-- Detection Levels Section -->
-        <section id="detection">
-            <div class="section-title">
-                <h2>비인가 학습 감지 기준 (Scoring Logic)</h2>
-                <p>소장의 내용을 분석하여 저작권 및 학습 관련 쟁점의 강도를 수치화합니다.</p>
-            </div>
-            <div class="detection-grid">
-                <div class="level-card critical">
-                    <div class="icon">🔥</div>
-                    <span class="score">80 - 100</span>
-                    <span class="label">Critical High</span>
-                    <p style="font-size: 0.8rem; margin-top: 1rem; color: var(--text-secondary);">무단 수집 + 학습 + 상업적 사용 (820 + Train 가점 포함)</p>
+                <div class="gallery-item reveal">
+                    <div class="img-wrapper">
+                        <img src="img/gemini_report.png" alt="Gemini Analysis">
+                    </div>
+                    <div class="gallery-info">
+                        <h4>Gemini Trend Summary</h4>
+                    </div>
                 </div>
-                <div class="level-card high">
-                    <div class="icon">⚠️</div>
-                    <span class="score">60 - 79</span>
-                    <span class="label">High Risk</span>
-                    <p style="font-size: 0.8rem; margin-top: 1rem; color: var(--text-secondary);">모델 학습 직접 언급 및 관련 쟁점 수반</p>
-                </div>
-                <div class="level-card medium">
-                    <div class="icon">🟡</div>
-                    <span class="score">40 - 59</span>
-                    <span class="label">Medium</span>
-                    <p style="font-size: 0.8rem; margin-top: 1rem; color: var(--text-secondary);">학습 데이터 관련 법적 쟁점 또는 NOS 820 단독 감지</p>
-                </div>
-                <div class="level-card low">
-                    <div class="icon">🟢</div>
-                    <span class="score">0 - 39</span>
-                    <span class="label">Low</span>
-                    <p style="font-size: 0.8rem; margin-top: 1rem; color: var(--text-secondary);">간접 연관 또는 정식 데이터 계약 사례</p>
+                <div class="gallery-item reveal">
+                    <div class="img-wrapper">
+                        <img src="img/courtlistener_data.png" alt="Data Flow">
+                    </div>
+                    <div class="gallery-info">
+                        <h4>Structured Legal Data</h4>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Architecture Section -->
         <section id="architecture">
-            <div class="section-title">
-                <h2>시스템 아키텍처 (Architecture)</h2>
-                <p>데이터 수집부터 지능형 필터링, 그리고 리포팅까지의 기술적 흐름입니다.</p>
+            <div class="section-header reveal">
+                <span>Architecture</span>
+                <h2>How it Works</h2>
+                <p>데이터 수집부터 지능형 분석, 리포팅까지의 기술적 아키텍처입니다.</p>
             </div>
-            <div class="architecture-box">
-                <div class="flow-step">
-                    <div class="step-num">1</div>
+            <div class="arch-visual reveal">
+                <div class="arch-step">
+                    <div class="step-circle">01</div>
                     <div class="step-content">
-                        <h4>Data Ingestion & Discovery</h4>
-                        <p>CourtListener API와 다수의 RSS Feed를 통해 최신 소송 및 뉴스 정보를 매 시간마다 탐색합니다. 검색 쿼리는 AI 학습 및 저작권 관련 정밀 키워드 조합으로 최적화되어 있습니다.</p>
+                        <h4>Ingestion & Discovery</h4>
+                        <p>CourtListener API와 RSS Feed를 통해 최신 소송 및 뉴스 정보를 1시간 주기로 탐색합니다.</p>
                     </div>
                 </div>
-                <div class="flow-step">
-                    <div class="step-num">2</div>
+                <div class="arch-step">
+                    <div class="step-circle">02</div>
                     <div class="step-content">
-                        <h4>Intelligent Extraction & Parsing</h4>
-                        <p>수집된 PDF/HTML 본문에서 사건번호, 당사자, 소송 이유, AI 학습 관련 핵심 구절(Snippet)을 정밀하게 파싱합니다. Heuristic 알고리즘과 정규표현식을 사용하여 데이터의 정확도를 높입니다.</p>
+                        <h4>Semantic Processing</h4>
+                        <p>Gemini Embedding 모델을 활용하여 기존 리포트와의 유사도를 분석, 중복 정보를 제거합니다.</p>
                     </div>
                 </div>
-                <div class="flow-step">
-                    <div class="step-num">3</div>
+                <div class="arch-step">
+                    <div class="step-circle">03</div>
                     <div class="step-content">
-                        <h4>Gemini-Powered Deduplication</h4>
-                        <p>Gemini Embedding 모델(text-embedding-004)을 사용하여 현재 수집된 뉴스와 이전 리포트 간의 코사인 유사도를 계산합니다. 이를 통해 문맥상 동일한 정보는 자동으로 스킵하여 불필요한 알림을 방지합니다.</p>
-                    </div>
-                </div>
-                <div class="flow-step">
-                    <div class="step-num">4</div>
-                    <div class="step-content">
-                        <h4>Aggregated Multi-Channel Reporting</h4>
-                        <p>정제된 정보는 GitHub Issues에 계층형 댓글 구조로 발행됩니다. 동시에 Slack Incoming Webhook을 통해 현황 요약 메시지를 발송하여 모바일에서도 즉시 확인이 가능합니다.</p>
+                        <h4>Multi-Channel Dispatch</h4>
+                        <p>정제된 정보는 GitHub Issues와 Slack을 통해 즉각적으로 배포됩니다.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Tech Stack Section -->
-        <section id="tech">
-            <div class="section-title">
-                <h2>Technology Stack</h2>
-                <p>신뢰성 있는 오픈소스와 최신 AI 기술을 결합하여 구축되었습니다.</p>
-            </div>
-            <div class="tech-stack">
-                <div class="tech-item"><i class="fab fa-python"></i><span>Python 3.9+</span></div>
-                <div class="tech-item"><i class="fas fa-robot"></i><span>Google Gemini 1.5</span></div>
-                <div class="tech-item"><i class="fab fa-github"></i><span>GitHub Actions</span></div>
-                <div class="tech-item"><i class="fab fa-slack"></i><span>Slack API</span></div>
-                <div class="tech-item"><i class="fas fa-database"></i><span>CourtListener API</span></div>
-            </div>
-        </section>
-
-        <!-- Setup Preview -->
+        <!-- Setup Section -->
         <section id="setup">
-            <div class="section-title">
-                <h2>Getting Started</h2>
-                <p>GitHub Secrets 및 Variables 설정만으로 즉시 운영이 가능합니다.</p>
+            <div class="section-header reveal">
+                <span>Setup</span>
+                <h2>Enterprise Ready Setup</h2>
+                <p>간단한 환경 설정만으로 조직의 AI 리스크 관리 시스템을 구축하세요.</p>
             </div>
-            <div class="setup-img-container">
-                <img src="img/actions-secret-variable.png" alt="GitHub Actions Secrets Setup" class="setup-img">
-            </div>
-            <div class="code-window">
-                <div class="code-header">
-                    <div class="dot dot-red"></div>
-                    <div class="dot dot-amber"></div>
-                    <div class="dot dot-green"></div>
+            <div class="setup-grid reveal">
+                <div class="code-container">
+                    <pre><code># AI 지능형 기능 설정 (config.py)
+GEMINI_API_KEY = "your_key"
+GEMINI_SEMANTIC_DEDUP = 1
+SEMANTIC_DEDUP_THRESHOLD = 0.85
+GITHUB_TOKEN = "ghp_your_token"
+SLACK_WEBHOOK = "https://hooks.slack..."</code></pre>
                 </div>
-                <pre><code># 1. 기본 서비스 설정 (Non-LLM)
-SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/..."
-GITHUB_TOKEN = "ghp_your_token..."
-LOOKBACK_DAYS = 3
-
-# 2. AI 지능형 기능 설정 (LLM / Gemini)
-GEMINI_API_KEY = "your_gemini_api_key"
-GEMINI_SEMANTIC_DEDUP = 1  # 의미론적 중복 제거 활성화 (Embedding API 사용)
-GEMINI_AISUIT_TREND_DAYS = 3  # Gemini 동향 분석 리포트 기간
-SEMANTIC_DEDUP_THRESHOLD = 0.85 # 중복 판정 임계값</code></pre>
+                <div class="setup-text">
+                    <h3>Simple Deployment</h3>
+                    <ul class="setup-list">
+                        <li><i class="fas fa-check-circle"></i> GitHub Actions 기반 서버리스 운영</li>
+                        <li><i class="fas fa-check-circle"></i> 환경 변수만으로 즉시 연동 가능</li>
+                        <li><i class="fas fa-check-circle"></i> 스케줄링 자동화 지원</li>
+                    </ul>
+                </div>
             </div>
         </section>
+    </main>
 
-        <footer>
-            <p>&copy; 2026 AI Lawsuit Radar Project. All rights reserved.</p>
-            <p style="font-size: 0.8rem; margin-top: 1rem;">Developed for AI Governance & Sensing. Powered by Gemini & GitHub Actions.</p>
-        </footer>
-    </div>
+    <footer>
+        <div class="footer-logo">
+            <i class="fas fa-satellite-dish" style="color: var(--primary);"></i> AI Lawsuit Radar
+        </div>
+        <div class="social-links">
+            <a href="https://github.com/aigovsensing/ai-suit-tracker-v02"><i class="fab fa-github"></i></a>
+            <a href="#"><i class="fab fa-slack"></i></a>
+            <a href="#"><i class="fas fa-globe"></i></a>
+        </div>
+        <p class="copyright">&copy; 2026 AI Lawsuit Radar. Built for AI Governance & Legal Tech.</p>
+    </footer>
 
     <script src="js/app.js"></script>
 </body>
