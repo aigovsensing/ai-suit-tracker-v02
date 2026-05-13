@@ -2,6 +2,16 @@
 
 AI 모델 학습을 위한 데이터 무단 사용 및 관련 저작권 소송을 추적하고 분석하는 자동화 도구입니다. 최근 설정된 기간(기본 3일) 내의 소송 정보를 **CourtListener(RECAP Archive)**와 **뉴스(RSS)**에서 수집하여 GitHub Issue와 Slack으로 통합 리포트를 제공하며, 인텔리전트한 중복 제거 로직을 통해 최신 업데이트만 깔끔하게 확인할 수 있습니다.
 
+## 🖼️ 미리보기 (Preview)
+
+| GitHub Issue 리포트 | Slack 모바일 알림 |
+|:---:|:---:|
+| ![GitHub Issue](./img/github_issue.png) | ![Slack Mobile](./img/slack_mobile.png) |
+
+| Gemini AI 동향 요약 | CourtListener 데이터 수집 |
+|:---:|:---:|
+| ![Gemini Report](./img/gemini_report.png) | ![CourtListener Data](./img/courtlistener_data.png) |
+
 ## ✨ 핵심 기능
 
 ### 1. 🔍 다각도 소송 추적
