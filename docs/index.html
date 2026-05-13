@@ -68,6 +68,11 @@
                     <h3>Risk Scoring</h3>
                     <p>저작권(820) 코드와 'training' 키워드 가중치를 조합하여 0-100점 사이의 정밀한 리스크 등급을 제공합니다.</p>
                 </div>
+                <div class="feature-card reveal" style="transition-delay: 0.4s;">
+                    <div class="feature-icon"><i class="fas fa-palette"></i></div>
+                    <h3>Visual Reporting</h3>
+                    <p>Imagen 3 기술을 활용하여 일일 리포트의 핵심 내용을 지브리 풍 일러스트로 시각화하여 제공합니다.</p>
+                </div>
             </div>
         </section>
 
@@ -155,10 +160,10 @@
             </div>
             <div class="setup-grid reveal">
                 <div class="code-container">
-                    <pre><code># AI 지능형 기능 설정 (config.py)
+                    <pre><code># AI 지능형 기능 설정 (Secrets/Variables)
 GEMINI_API_KEY = "your_key"
 GEMINI_SEMANTIC_DEDUP = 1
-SEMANTIC_DEDUP_THRESHOLD = 0.85
+GEMINI_DAILY_REPORT_IMAGEGEN = 1
 GITHUB_TOKEN = "ghp_your_token"
 SLACK_WEBHOOK = "https://hooks.slack..."</code></pre>
                 </div>
