@@ -121,6 +121,11 @@ def calculate_news_detection_score(title: str, reason: str) -> tuple[int, List[s
             # 각 카테고리에서 발견된 첫 2개 키워드만 표시 (너무 길어짐 방지)
             matched_keywords.append(f"{name}: {', '.join(found[:2])}")
 
+    # [핵심] 저작권 + 모델 학습 동시 감지 시 가점 (+50)
+    if any(k in text for k in ["820", "3820", "copyright"]) and any(k in text for k in ["train", "training"]):
+        score += 50
+        matched_keywords.insert(0, "핵심: 저작권 소송 내 모델 학습 직접 언급 (Critical)")
+
     return max(0, min(score, 100)), matched_keywords
 
 
@@ -141,6 +146,11 @@ def calculate_case_detection_score(case: CLCaseSummary) -> int:
     score = 0
     text = f"{case.extracted_ai_snippet or ''} {case.extracted_causes or ''}".lower()
     nature = (case.nature_of_suit or "").lower()
+
+    # 0. 핵심 AI 학습 저작권 소송 (+50)
+    # 820 Copyright 이면서 소장 내 train 키워드 발견 시 (Critical Priority)
+    if ("820" in nature or "copyright" in nature) and any(k in text for k in ["train", "training"]):
+        score += 50
 
     # 1. 무단 데이터 수집 명시 (+25)
     if any(k in text for k in ["scrape", "crawl", "ingest", "harvest", "mining", "extraction", "bulk", "collection", "robots.txt", "common crawl", "laion", "the pile", "bookcorpus", "unauthorized"]):
@@ -480,11 +490,13 @@ def render_markdown(
     lines.append("")
     lines.append("| 항목 | 조건 (주요 키워드) | 점수 |")
     lines.append("|---|---|---|")
+    lines.append("| **핵심 AI 학습 저작권 소송** | **(820/Copyright) + (Train/Training)** | **+50** |")
     for name, keywords, points in DETECTION_CRITERIA:
         kw_str = ", ".join(keywords[:5]) + " 등"
         sign = "+" if points > 0 else ""
         lines.append(f"| {name} | {kw_str} | {sign}{points} |")
-    lines.append("\n- **감지 레벨 산정 로직 개선**: 정식 계약/협력 발생 시 감지 레벨 점수를 -10점 차감하여 실제 비인가 학습 소송 이슈와 차별화하였습니다. (최소 0점 보정 포함)")
+    lines.append("\n- **핵심 가점 항목**: 저작권 소송(Nature 820 등)이면서 소장 내에 모델 학습(Train/Training) 키워드가 동시에 발견될 경우 **+50점**의 추가 가점을 부여하여 최상단에 우선 노출합니다.")
+    lines.append("- **감지 레벨 산정 로직 개선**: 정식 계약/협력 발생 시 감지 레벨 점수를 -10점 차감하여 실제 비인가 학습 소송 이슈와 차별화하였습니다. (최소 0점 보정 포함)")
     lines.append("")
 
     lines.append("</details>\n")
