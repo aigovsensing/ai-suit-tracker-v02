@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - AI Lawsuit Radar</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        .manual-container {
+            padding-top: 10rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .manual-section {
+            margin-bottom: 4rem;
+        }
+        .manual-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+        .manual-section p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+        .manual-section ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+        }
+        .manual-section li {
+            margin-bottom: 0.5rem;
+        }
+        .code-block {
+            background: #1e293b;
+            padding: 1.5rem;
+            border-radius: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <i class="fas fa-radar"></i> AI Lawsuit Radar
+            </a>
+            <ul class="nav-links">
+                <li><a href="../index.html#features">Features</a></li>
+                <li><a href="../index.html#gallery">Preview</a></li>
+                <li><a href="../index.html#architecture">Architecture</a></li>
+                <li><a href="../index.html#setup">Setup</a></li>
+                <li><a href="https://github.com/aigovsensing/ai-suit-tracker-v02/issues" target="_blank" class="nav-btn-demo">DEMO</a></li>
+                <li><a href="guide.html" class="nav-btn">User Guide</a></li>
+                <li><a href="https://github.com/aigovsensing/ai-suit-tracker-v02" target="_blank"><i class="fab fa-github"></i></a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container manual-container">
+        <header style="height: auto; margin-bottom: 4rem;">
+            <div class="hero-tag">Documentation</div>
+            <h1>User Guide</h1>
+            <p class="hero-desc">AI Lawsuit Radar의 설정 및 사용 방법에 대한 상세 가이드입니다.</p>
+        </header>
+
+        <section class="manual-section">
+            <h2>1. 프로젝트 개요</h2>
+            <p>
+                AI Lawsuit Radar는 인공지능 학습 데이터와 관련된 저작권 소송을 자동으로 탐색하고 분석하는 도구입니다. 
+                전 세계 법원 데이터와 뉴스 피드를 실시간으로 모니터링하여 핵심적인 법적 리스크를 리포트합니다.
+            </p>
+        </section>
+
+        <section class="manual-section">
+            <h2>2. 시작하기 (Quick Start)</h2>
+            <p>GitHub Actions를 통해 서버 없이 무료로 운영할 수 있습니다.</p>
+            <ul>
+                <li><strong>Step 1:</strong> 본 저장소를 Fork 합니다.</li>
+                <li><strong>Step 2:</strong> <code>Settings > Secrets and variables > Actions</code> 메뉴로 이동합니다.</li>
+                <li><strong>Step 3:</strong> 아래의 필수 환경 변수를 등록합니다.</li>
+            </ul>
+            <div class="code-block">
+                GEMINI_API_KEY: Google AI Studio에서 발급받은 API 키<br>
+                SLACK_WEBHOOK_URL: 알림을 받을 Slack Webhook URL<br>
+                GITHUB_TOKEN: Issue 발행 권한이 있는 Personal Access Token
+            </div>
+        </section>
+
+        <section class="manual-section">
+            <h2>3. 주요 기능 상세</h2>
+            <p><strong>의미론적 중복 제거 (Semantic Deduplication)</strong></p>
+            <p>
+                단순히 제목이 같은 뉴스를 제외하는 것이 아니라, Gemini Embedding 모델을 사용하여 내용이 유사한 정보를 자동으로 걸러냅니다. 
+                이 기능은 <code>GEMINI_SEMANTIC_DEDUP = 1</code> 설정을 통해 활성화할 수 있습니다.
+            </p>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 AI Lawsuit Radar Project. All rights reserved.</p>
+            <p style="font-size: 0.8rem; margin-top: 1rem;">Developed for AI Governance & Sensing. Powered by Gemini & GitHub Actions.</p>
+        </footer>
+    </div>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('.main-nav');
+            if (window.scrollY > 50) {
+                nav.style.padding = '1rem 0';
+                nav.style.background = 'rgba(11, 14, 20, 0.9)';
+            } else {
+                nav.style.padding = '1.5rem 0';
+                nav.style.background = 'rgba(11, 14, 20, 0.7)';
+            }
+        });
+    </script>
+</body>
+</html>

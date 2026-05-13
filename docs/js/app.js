@@ -13,6 +13,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Nav background change on scroll
+    const nav = document.querySelector('.main-nav');
+    if (nav) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.style.padding = '1rem 0';
+                nav.style.background = 'rgba(11, 14, 20, 0.9)';
+                nav.style.boxShadow = '0 10px 30px -10px rgba(0,0,0,0.5)';
+            } else {
+                nav.style.padding = '1.5rem 0';
+                nav.style.background = 'rgba(11, 14, 20, 0.7)';
+                nav.style.boxShadow = 'none';
+            }
+        });
+    }
+
     // Reveal animations on scroll
     const observerOptions = {
         threshold: 0.1,
