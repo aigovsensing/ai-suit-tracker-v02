@@ -176,7 +176,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         
         # 2차: 의미론적 유사도 체크 (Gemini API 및 옵션 활성화 시)
         semantic_duplicates = set()
-        enable_semantic = os.environ.get("USE_SEMANTIC_DEDUP", "0") == "1"
+        enable_semantic = os.environ.get("GEMINI_SEMANTIC_DEDUP", "0") == "1"
         
         if remaining_indices and base_titles and os.environ.get("GEMINI_API_KEY") and enable_semantic:
             debug_log(f"Performing semantic dedup for {len(remaining_indices)} news items against {len(base_titles)} baselines...")
