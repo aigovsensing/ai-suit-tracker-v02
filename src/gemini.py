@@ -166,3 +166,56 @@ def calculate_cosine_similarity(v1: List[float], v2: List[float]) -> float:
         return 0.0
     
     return dot_product / (norm_v1 * norm_v2)
+
+def generate_gemini_image(prompt: str, output_path: str) -> Optional[str]:
+    """
+    Google AI Studio의 Imagen 3 모델을 사용하여 이미지를 생성하고 저장합니다.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        debug_log("GEMINI_API_KEY가 설정되지 않아 이미지 생성을 건너뜜.")
+        return None
+
+    try:
+        from google import genai
+        from google.genai import types
+        
+        client = genai.Client(api_key=api_key)
+        
+        # 지브리 스타일을 위한 프롬프트 강화
+        enhanced_prompt = f"Studio Ghibli anime style illustration, {prompt}. Hand-drawn aesthetic, lush colors, whimsical lighting, detailed scenery, painterly texture."
+        
+        debug_log(f"이미지 생성 시도: {enhanced_prompt}")
+        
+        response = client.models.generate_images(
+            model='imagen-3.0-generate-001',
+            prompt=enhanced_prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                output_mime_type='image/png',
+                add_watermark=False
+            )
+        )
+
+        if response.generated_images:
+            img = response.generated_images[0]
+            # output_path가 폴더인 경우 파일명 생성
+            if os.path.isdir(output_path):
+                from datetime import datetime
+                filename = f"daily_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                output_path = os.path.join(output_path, filename)
+            
+            # 폴더 생성
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            
+            # 이미지 저장
+            with open(output_path, "wb") as f:
+                f.write(img.image.image_bytes)
+            
+            debug_log(f"이미지 저장 완료: {output_path}")
+            return output_path
+            
+        return None
+    except Exception as e:
+        debug_log(f"Gemini 이미지 생성 중 오류 발생: {e}")
+        return None

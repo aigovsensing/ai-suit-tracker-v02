@@ -70,9 +70,27 @@ Gemini API를 사용하여 리포트의 가독성과 분석 품질을 높이는 
 |---|---|---|---|
 | `GEMINI_API_KEY` | **Secret** | (선택) | Google AI Studio API 키 (**실행당 평균 1~3회 호출**) |
 | `GEMINI_AISUIT_TREND_DAYS` | **Variable** | (공백) | **설정 시 Gemini 요약 기능 활성화.** 분석할 데이터의 기간(예: `3`)을 입력하면 해당 기간의 동향을 Gemini가 분석하여 발행합니다. (실행당 1회 호출) |
+| `GEMINI_DAILY_REPORT_IMAGEGEN` | **Variable** | `0` | **설정 시 당일 요약 리포트에 지브리 스타일 이미지 생성.** (1: 활성화, 0: 비활성화. 실행당 1회 Imagen 3 호출) |
 | `GEMINI_SEMANTIC_DEDUP` | **Variable** | `0` | **설정 시 의미론적 중복 제거 활성화.** (1: 활성화, 0: 비활성화, 실행당 약 2회 Embedding API 호출) |
 | `SEMANTIC_DEDUP_THRESHOLD` | **Variable** | `0.85` | 의미론적 중복 판정 임계값 (0.0~1.0, 높을수록 엄격) |
 | `GEMINI_MODEL` | **Variable** | `gemini-1.5-flash` | 사용할 Gemini 모델명 |
+
+### 3. Google AI Studio 무료 API 지원 정보 (2026년 기준)
+
+2026년 현재 **Google AI Studio**의 무료 계정에서도 텍스트 분석뿐만 아니라 **이미지 생성(Imagen 모델)** 기능을 사용할 수 있습니다.
+
+#### 1) 이미지 생성(Imagen) 사용 권한
+* **지원 모델:** **Imagen 4** (Fast, Standard) 및 **Gemini 2.5 Flash Image** 등
+* **특이 사항:** 무료 티어로 생성된 모든 이미지에는 **SynthID 워터마크**가 포함됩니다.
+
+#### 2) API 무료 티어 및 할당량 (Quota)
+| 구분 | Gemini 2.5 Flash / Flash-Lite | Imagen 4 (API) |
+| --- | --- | --- |
+| **분당 요청수 (RPM)** | 15 RPM | 5 RPM |
+| **일일 요청수 (RPD)** | 1,500 RPD | 약 50~100 이미지 |
+| **비용** | $0 (무료) | $0 (무료 범위 내) |
+
+> **참고:** 무료 사용 시 "사용자의 데이터가 모델 학습에 사용될 수 있다"는 점에 유의하세요. 사용량이 초과되면 `429 Too Many Requests` 에러가 발생하며, 태평양 표준시(PT) 자정 기준으로 초기화됩니다. 상세 정보는 [공식 가격 정책](https://ai.google.dev/pricing)을 확인하세요.
 
 ## 🚀 실행 및 스케줄
 

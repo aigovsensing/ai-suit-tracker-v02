@@ -88,4 +88,47 @@ def generate_daily_report_from_data(news_data: dict, case_data: dict) -> str:
 """
     debug_log(f"Gemini 당일 요약 리포트 생성 중 (데이터: 뉴스 {len(news_lines)}건, 소송 {len(case_lines)}건)")
     summary = get_gemini_summary(prompt)
-    return (summary or "").strip()
+    if not summary:
+        return ""
+    
+    # [추가] 지브리 스타일 이미지 생성 제어 (환경 변수 확인)
+    image_gen_enabled = os.environ.get("GEMINI_DAILY_REPORT_IMAGEGEN") == "1"
+    
+    if not image_gen_enabled:
+        return summary.strip()
+
+    from .gemini import generate_gemini_image
+    import os
+    
+    # 요약문의 첫 번째 단락이나 핵심 요약을 바탕으로 프롬프트 추출 (간단히 핵심 요약 활용)
+    visual_prompt = "AI and Copyright Lawsuit theme"
+    if "**[금일 핵심 요약]**" in summary:
+        try:
+            visual_prompt = summary.split("**[금일 핵심 요약]**")[1].split("\n")[0].strip()
+        except:
+            pass
+            
+    # 이미지 저장 경로 (github actions 실행 시 docs/img 폴더에 저장하여 커밋 연동 고려)
+    img_dir = "docs/img"
+    img_path = os.path.join(img_dir, "daily_visual_report.png")
+    
+    debug_log(f"지브리 스타일 이미지 생성 시도 (프롬프트: {visual_prompt})")
+    saved_path = generate_gemini_image(visual_prompt, img_path)
+    
+    if saved_path:
+        # GitHub Repo 내의 이미지를 참조하도록 링크 구성 (사용자가 추후 커밋한다는 가정)
+        # 보통 raw.githubusercontent.com/{owner}/{repo}/main/docs/img/daily_visual_report.png 형태
+        owner = os.environ.get("GITHUB_OWNER", "OWNER")
+        repo = os.environ.get("GITHUB_REPO", "REPO")
+        img_url = f"https://raw.githubusercontent.com/{owner}/{repo}/main/docs/img/daily_visual_report.png"
+        
+        image_section = f"""
+
+### 4. 🎨 시각적 동향 리포트 (Ghibli Style)
+![AI Lawsuit Ghibli Style]({img_url})
+
+> **[AI 이미지 가이드]** 위 이미지는 금일 핵심 이슈를 바탕으로 생성된 지브리 스타일의 일러스트입니다. (이미지가 보이지 않는 경우, 워크플로우에서 `docs/img` 폴더의 변경사항을 커밋하도록 설정했는지 확인해주세요.)
+"""
+        return summary.strip() + image_section
+    
+    return summary.strip()
