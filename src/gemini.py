@@ -1,5 +1,6 @@
 import os
 import google.generativeai as genai
+from typing import List, Optional
 from .utils import debug_log
 
 def get_gemini_model_name() -> str:
@@ -127,3 +128,41 @@ def get_gemini_summary(prompt: str) -> str:
     except Exception as e:
         debug_log(f"Gemini API 라이브러리 구성 중 오류 발생: {e}")
         return ""
+
+def get_embeddings(texts: List[str]) -> List[List[float]]:
+    """
+    Gemini API를 사용하여 텍스트 리스트의 임베딩을 생성합니다.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key or not texts:
+        return []
+
+    try:
+        genai.configure(api_key=api_key, transport='rest')
+        # 한 번에 최대 100개까지 지원하므로 배치 처리가 필요할 수 있지만, 
+        # 여기서는 보통 뉴스 건수가 적으므로 단순 호출합니다.
+        result = genai.embed_content(
+            model="models/text-embedding-004",
+            content=texts,
+            task_type="retrieval_document"
+        )
+        return result['embeddings']
+    except Exception as e:
+        debug_log(f"Gemini 임베딩 생성 중 오류 발생: {e}")
+        return []
+
+def calculate_cosine_similarity(v1: List[float], v2: List[float]) -> float:
+    """
+    두 벡터 간의 코사인 유사도를 계산합니다.
+    """
+    if not v1 or not v2 or len(v1) != len(v2):
+        return 0.0
+    
+    dot_product = sum(a * b for a, b in zip(v1, v2))
+    norm_v1 = sum(a * a for a in v1) ** 0.5
+    norm_v2 = sum(a * a for a in v2) ** 0.5
+    
+    if norm_v1 == 0 or norm_v2 == 0:
+        return 0.0
+    
+    return dot_product / (norm_v1 * norm_v2)

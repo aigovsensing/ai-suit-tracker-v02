@@ -2,6 +2,8 @@ from __future__ import annotations
 import re
 from typing import List, Set, Tuple
 from .utils import debug_log
+from .gemini import get_embeddings, calculate_cosine_similarity
+import os
 
 def extract_section(md_text: str, section_title: str) -> str:
     """Markdown 텍스트에서 특정 섹션 제목 아래의 내용을 추출합니다."""
@@ -160,12 +162,43 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         header_line, separator_line = n_table_meta
         non_skip_rows = []
 
-        for r in n_rows:
-            title = extract_article_title(r[title_idx])
+        # 의미론적 중복 체크를 위한 임베딩 준비
+        current_titles = [extract_article_title(r[title_idx]) for r in n_rows]
+        base_titles = list(base_article_set)
+        
+        # 1차: 정확한 일치 제거
+        remaining_indices = []
+        for i, title in enumerate(current_titles):
             if title in base_article_set:
-                debug_log(f"Skipping duplicate News (based on Title): {title}")
+                debug_log(f"Skipping exact duplicate News: {title}")
             else:
-                non_skip_rows.append(r)
+                remaining_indices.append(i)
+        
+        # 2차: 의미론적 유사도 체크 (Gemini API 및 옵션 활성화 시)
+        semantic_duplicates = set()
+        enable_semantic = os.environ.get("USE_SEMANTIC_DEDUP", "0") == "1"
+        
+        if remaining_indices and base_titles and os.environ.get("GEMINI_API_KEY") and enable_semantic:
+            debug_log(f"Performing semantic dedup for {len(remaining_indices)} news items against {len(base_titles)} baselines...")
+            
+            # 임베딩 생성 (배치)
+            current_embeddings = get_embeddings([current_titles[i] for i in remaining_indices])
+            base_embeddings = get_embeddings(base_titles)
+            
+            if current_embeddings and base_embeddings:
+                threshold = float(os.environ.get("SEMANTIC_DEDUP_THRESHOLD", "0.85"))
+                for i_idx, i in enumerate(remaining_indices):
+                    curr_emb = current_embeddings[i_idx]
+                    for j_idx, base_emb in enumerate(base_embeddings):
+                        similarity = calculate_cosine_similarity(curr_emb, base_emb)
+                        if similarity >= threshold:
+                            debug_log(f"Skipping semantic duplicate: '{current_titles[i]}' is similar to '{base_titles[j_idx]}' (sim: {similarity:.4f})")
+                            semantic_duplicates.add(i)
+                            break
+        
+        for i in remaining_indices:
+            if i not in semantic_duplicates:
+                non_skip_rows.append(n_rows[i])
                 new_article_count += 1
         
         if new_article_count == 0:

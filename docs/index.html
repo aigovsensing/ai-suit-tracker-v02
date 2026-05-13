@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lawsuit Monitor - Semantic Deduplication Solution</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="dark-mode">
+    <header>
+        <nav>
+            <div class="logo">AI Lawsuit <span>Monitor</span></div>
+            <ul class="nav-links">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#technology">Technology</a></li>
+                <li><a href="#workflow">Workflow</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero" class="hero">
+            <div class="hero-content">
+                <h1 class="gradient-text">Semantic Deduplication</h1>
+                <p class="subtitle">Gemini Embedding 기술을 활용한 지능형 뉴스 중복 제거 솔루션</p>
+                <div class="cta-group">
+                    <a href="#technology" class="btn primary">기술 상세 보기</a>
+                    <a href="https://github.com/aigovsensing/ai-suit-tracker-v02" class="btn secondary">GitHub Repository</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="vector-animation">
+                    <!-- Animation placeholder -->
+                    <div class="dot d1"></div>
+                    <div class="dot d2"></div>
+                    <div class="dot d3"></div>
+                    <div class="line l1"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="overview" class="overview">
+            <div class="container">
+                <h2 class="section-title">왜 의미 분석이 필요한가요?</h2>
+                <div class="problem-solution">
+                    <div class="card problem">
+                        <h3>Existing Problem</h3>
+                        <p>단순 텍스트 매칭 방식은 기사 제목이 조금만 달라도 중복으로 인식하지 못합니다.</p>
+                        <div class="example-box">
+                            <span>"NYT sues OpenAI"</span>
+                            <span class="vs">vs</span>
+                            <span>"OpenAI hit with lawsuit by New York Times"</span>
+                        </div>
+                    </div>
+                    <div class="card solution">
+                        <h3>Our Solution</h3>
+                        <p>문장의 의미를 벡터(Vector)로 변환하여 문맥적 유사도를 분석합니다.</p>
+                        <ul class="check-list">
+                            <li>제목이 달라도 같은 내용이면 필터링</li>
+                            <li>Gemini Embedding (text-embedding-004) 활용</li>
+                            <li>지능형 임계값 기반 정밀 판정</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="technology" class="technology">
+            <div class="container">
+                <h2 class="section-title">Core Technology</h2>
+                <div class="tech-grid">
+                    <div class="tech-item">
+                        <div class="icon">🧬</div>
+                        <h3>Gemini Embedding</h3>
+                        <p>텍스트를 768차원의 고차원 벡터로 변환하여 언어의 핵심 의미를 수치화합니다.</p>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">📐</div>
+                        <h3>Cosine Similarity</h3>
+                        <p>두 벡터 간의 각도를 계산하여 문장의 의미적 거리를 측정합니다. (기본 임계값: 0.85)</p>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">⚡</div>
+                        <h3>Batch Processing</h3>
+                        <p>수집된 수십 건의 뉴스를 한 번에 임베딩하여 API 호출 효율을 극대화합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="workflow" class="workflow">
+            <div class="container">
+                <h2 class="section-title">How it works</h2>
+                <div class="step-container">
+                    <div class="step">
+                        <div class="step-num">01</div>
+                        <div class="step-content">
+                            <h4>News Fetching</h4>
+                            <p>RSS 및 뉴스를 통해 최신 소송 관련 기사를 수집합니다.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">02</div>
+                        <div class="step-content">
+                            <h4>Vectorization</h4>
+                            <p>수집된 제목과 기존 리포트의 제목을 Gemini Embedding 모델로 변환합니다.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">03</div>
+                        <div class="step-content">
+                            <h4>Semantic Check</h4>
+                            <p>코사인 유사도 분석을 통해 중복 여부를 판정하고 중복 시 자동으로 제외합니다.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">04</div>
+                        <div class="step-content">
+                            <h4>Clean Report</h4>
+                            <p>핵심 정보만 담긴 깔끔한 리포트를 GitHub Issue와 Slack으로 발행합니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="config" class="config">
+            <div class="container">
+                <h2 class="section-title">Getting Started</h2>
+                <div class="config-card">
+                    <h3>환경변수 설정</h3>
+                    <p>의미론적 중복 제거 기능은 기본적으로 비활성화되어 있습니다. 활성화하려면 다음 환경변수를 설정하세요.</p>
+                    <div class="code-block">
+                        <code>USE_SEMANTIC_DEDUP = 1</code>
+                        <code>GEMINI_API_KEY = YOUR_API_KEY</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 AI Lawsuit Monitor. Built with Gemini AI.</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
