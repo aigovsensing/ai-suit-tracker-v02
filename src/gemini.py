@@ -167,20 +167,24 @@ def calculate_cosine_similarity(v1: List[float], v2: List[float]) -> float:
     
     return dot_product / (norm_v1 * norm_v2)
 
-def generate_gemini_image(prompt: str, output_path: str) -> Optional[str]:
+from typing import List, Optional, Tuple
+
+def generate_gemini_image(prompt: str, output_path: str) -> Tuple[Optional[str], Optional[str]]:
     """
     Google AI Studio의 Imagen 3 모델을 사용하여 이미지를 생성하고 저장합니다.
+    Returns: (saved_path, error_message)
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        debug_log("GEMINI_API_KEY가 설정되지 않아 이미지 생성을 건너뜜.")
-        return None
+        msg = "GEMINI_API_KEY가 설정되지 않아 이미지 생성을 건너뜀."
+        debug_log(msg)
+        return None, msg
 
     try:
-        from google import genai
+        from google import genai as genai_new
         from google.genai import types
         
-        client = genai.Client(api_key=api_key)
+        client = genai_new.Client(api_key=api_key)
         
         # 지브리 스타일을 위한 프롬프트 강화
         enhanced_prompt = f"Studio Ghibli anime style illustration, {prompt}. Hand-drawn aesthetic, lush colors, whimsical lighting, detailed scenery, painterly texture."
@@ -213,9 +217,10 @@ def generate_gemini_image(prompt: str, output_path: str) -> Optional[str]:
                 f.write(img.image.image_bytes)
             
             debug_log(f"이미지 저장 완료: {output_path}")
-            return output_path
+            return output_path, None
             
-        return None
+        return None, "이미지가 생성되었으나 응답 데이터가 비어 있습니다."
     except Exception as e:
-        debug_log(f"Gemini 이미지 생성 중 오류 발생: {e}")
-        return None
+        error_msg = str(e)
+        debug_log(f"Gemini 이미지 생성 중 오류 발생: {error_msg}")
+        return None, error_msg
