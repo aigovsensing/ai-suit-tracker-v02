@@ -81,10 +81,54 @@
                 AI Lawsuit Radar는 인공지능 학습 데이터와 관련된 저작권 소송을 자동으로 탐색하고 분석하는 도구입니다. 
                 전 세계 법원 데이터와 뉴스 피드를 실시간으로 모니터링하여 핵심적인 법적 리스크를 리포트합니다.
             </p>
+            <p><strong>주요 데이터 소스:</strong></p>
+            <ul>
+                <li><strong>CourtListener (RECAP):</strong> 미국 연방법원의 공식 도켓 및 소장(Complaint) 데이터</li>
+                <li><strong>RSS News Feeds:</strong> 글로벌 주요 테크 및 법률 뉴스 매체</li>
+            </ul>
         </section>
 
         <section class="manual-section">
-            <h2>2. 시작하기 (Quick Start)</h2>
+            <h2>2. 핵심 인텔리전스 기능</h2>
+            
+            <h3>2.1 비인가 학습 소송 감지 레벨 (Risk Scoring)</h3>
+            <p>소장의 내용을 분석하여 0-100점 사이의 리스크 점수를 산출합니다. 주요 가점 요인은 다음과 같습니다:</p>
+            <ul>
+                <li><strong>Copyright 직접 언급:</strong> +30점</li>
+                <li><strong>Unauthorized/Scraping 명시:</strong> +25점</li>
+                <li><strong>Model Training 직접 언급:</strong> +20점</li>
+                <li><strong>Commercial Use:</strong> +10점</li>
+            </ul>
+            <p>이 점수를 바탕으로 🟢(Low), 🟡(Medium), ⚠️(High), 🔥(Critical) 등급으로 자동 분류됩니다.</p>
+
+            <h3>2.2 역사적 추이 분석 (Historical Trend)</h3>
+            <p>2021년부터 현재까지의 데이터를 전수 조사하여 AI 관련 소송의 증가 추세를 분석합니다. <code>src/stats.py</code> 모듈을 통해 연도별 소송 건수를 통계화하고 그래프로 시각화합니다.</p>
+
+            <h3>2.3 전략적 영향 분석 (Strategic Impact)</h3>
+            <p>단순한 소송 요약을 넘어, 수집된 정보가 기업(예: 삼성전자 가우스, 갤럭시 AI)에 미칠 수 있는 잠재적 영향력을 Gemini가 심층 분석합니다. 법적 대응 전략 및 기술적 대비 사항을 포함합니다.</p>
+        </section>
+
+        <section class="manual-section">
+            <h2>3. 중복 제거 및 최적화</h2>
+            
+            <h3>3.1 의미론적 중복 제거 (Semantic Dedup)</h3>
+            <p>
+                <code>GEMINI_SEMANTIC_DEDUP = 1</code> 설정 시 활성화됩니다. Gemini Embedding 모델을 사용하여 제목이 다르더라도 동일한 사건을 다루는 기사들을 감지(유사도 0.85 이상)하여 필터링합니다.
+            </p>
+            
+            <h3>3.2 교차일 중복 제거 (Cross-Day Dedup)</h3>
+            <p>
+                <code>PREVIOUS_ITEM_DEDUP_DAYS</code> 설정을 통해 과거 이슈에 보고된 내용이 새 이슈에 다시 나타나는 것을 방지합니다. 며칠 간의 히스토리를 대조할지 직접 설정할 수 있습니다.
+            </p>
+            
+            <h3>3.3 시각적 동향 리포트 (Visual Reporting)</h3>
+            <p>
+                <code>GEMINI_DAILY_REPORT_IMAGEGEN = 1</code> 설정 시 금일의 핵심 이슈를 지브리 스타일의 이미지로 시각화합니다. Google의 Imagen 3 모델을 사용하여 텍스트 리포트의 가독성을 높입니다.
+            </p>
+        </section>
+
+        <section class="manual-section">
+            <h2>4. 시작하기 (Quick Start)</h2>
             <p>GitHub Actions를 통해 서버 없이 무료로 운영할 수 있습니다.</p>
             <ul>
                 <li><strong>Step 1:</strong> 본 저장소를 Fork 합니다.</li>
@@ -92,25 +136,10 @@
                 <li><strong>Step 3:</strong> 아래의 필수 환경 변수를 등록합니다.</li>
             </ul>
             <div class="code-block">
-                GEMINI_API_KEY: Google AI Studio에서 발급받은 API 키<br>
-                SLACK_WEBHOOK_URL: 알림을 받을 Slack Webhook URL<br>
-                GITHUB_TOKEN: Issue 발행 권한이 있는 Personal Access Token
+                GEMINI_API_KEY: Google AI Studio API 키 (v1beta3 지원)<br>
+                SLACK_WEBHOOK_URL: Slack Incoming Webhook URL<br>
+                GITHUB_TOKEN: Issue 및 Commit 권한이 있는 토큰
             </div>
-        </section>
-
-        <section class="manual-section">
-            <h2>3. 주요 기능 상세</h2>
-            <p><strong>의미론적 중복 제거 (Semantic Deduplication)</strong></p>
-            <p>
-                단순히 제목이 같은 뉴스를 제외하는 것이 아니라, Gemini Embedding 모델을 사용하여 내용이 유사한 정보를 자동으로 걸러냅니다. 
-                이 기능은 <code>GEMINI_SEMANTIC_DEDUP = 1</code> 설정을 통해 활성화할 수 있습니다.
-            </p>
-            
-            <p><strong>시각적 동향 리포트 (Visual Reporting)</strong></p>
-            <p>
-                당일의 핵심 이슈를 지브리 스타일의 이미지로 자동 생성하여 시각적인 인사이트를 제공합니다. 
-                이 기능은 <code>GEMINI_DAILY_REPORT_IMAGEGEN = 1</code> 설정을 통해 활성화할 수 있으며, Google AI Studio의 Imagen 3 모델을 사용합니다.
-            </p>
         </section>
 
         <footer>
