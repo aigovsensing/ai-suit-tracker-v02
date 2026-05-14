@@ -5,7 +5,7 @@ from .utils import debug_log
 
 def get_gemini_model_name() -> str:
     """
-    환경 변수에서 사용할 Gemini 모델명을 가져옵니다. 기본값은 'gemini-1.5-flash'입니다.
+    환경 변수에서 사용할 Gemini 모델명을 가져옵니다. 기본값은 'gemini-3-flash-preview'입니다.
     """
     return os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 
@@ -14,8 +14,8 @@ def get_gemini_model_display_name() -> str:
     출력용으로 친숙한 모델 이름을 반환합니다.
     """
     model_name = get_gemini_model_name()
-    if "gemini-1.5-flash" in model_name.lower() or "gemini-flash" in model_name.lower():
-        return "Gemini 1.5 Flash"
+    if "gemini-3-flash" in model_name.lower() or "gemini-flash" in model_name.lower():
+        return "Gemini 3 Flash"
     if "gemini-1.5-pro" in model_name.lower() or "gemini-pro" in model_name.lower():
         return "Gemini 1.5 Pro"
     if "gemini-2.0-flash" in model_name.lower():

@@ -73,28 +73,28 @@ Gemini API를 사용하여 리포트의 가독성과 분석 품질을 높이는 
 | `GEMINI_DAILY_REPORT_IMAGEGEN` | **Variable** | `0` | **설정 시 당일 요약 리포트에 지브리 스타일 이미지 생성.** (1: 활성화, 0: 비활성화. 실행당 1회 Imagen 3 호출) |
 | `GEMINI_SEMANTIC_DEDUP` | **Variable** | `0` | **설정 시 의미론적 중복 제거 활성화.** (1: 활성화, 0: 비활성화, 실행당 약 2회 Embedding API 호출) |
 | `SEMANTIC_DEDUP_THRESHOLD` | **Variable** | `0.85` | 의미론적 중복 판정 임계값 (0.0~1.0, 높을수록 엄격) |
-| `GEMINI_MODEL` | **Variable** | `gemini-1.5-flash` | 사용할 Gemini 모델명 |
+| `GEMINI_MODEL` | **Variable** | `gemini-3-flash-preview` | 사용할 Gemini 모델명 |
 
 ### 3. Google AI Studio 무료 API 지원 정보 (2026년 기준)
 
-2026년 현재 **Google AI Studio**의 무료 계정에서도 텍스트 분석뿐만 아니라 **이미지 생성(Imagen 모델)** 기능을 사용할 수 있습니다.
+2026년 현재 **Google AI Studio**의 정책에 따르면, **Imagen (독립형 이미지 생성 모델) API는 유료 플랜(Paid Plan)에서만 제공**되는 것으로 확인됩니다. 무료 티어(Free Tier)에서는 텍스트 생성 및 분석은 가능하지만, API를 통한 이미지 생성은 제한되어 있습니다.
 
 #### 1) 이미지 생성(Imagen) 사용 권한
-* **지원 모델:** **Imagen 4** (Fast, Standard) 및 **Gemini 2.5 Flash Image** 등
-* **특이 사항:** 무료 티어로 생성된 모든 이미지에는 **SynthID 워터마크**가 포함됩니다.
+* **유료 플랜 필요:** Imagen 4 및 독립형 Imagen 모델을 API로 호출하려면 유료 계정 업그레이드가 필요합니다.
+* **대안:** 무료 이미지 생성이 필요한 경우, **Hugging Face Inference API** (Stable Diffusion, FLUX 등)를 활용하는 것을 권장합니다.
 
 #### 2) 텍스트 생성(Gemini) 사용 권한
-* **지원 모델:** **Gemini 2.5 Flash** 및 **Flash-Lite** 등
-* **특이 사항:** 2026년 4월 정책 업데이트로 **Gemini Pro** 이상급 모델은 유료/선불 계정 위주로 제공되며, **Flash 모델**은 무료 티어에서 여전히 높은 성능과 넉넉한 쿼터를 제공합니다.
+* **지원 모델:** **Gemini 3 Flash-Lite** 및 **Flash** 등
+* **특이 사항:** 2026년 정책 업데이트로 **Gemini Pro** 이상급 모델은 유료/선불 계정 위주로 제공되며, **Flash 모델**은 무료 티어에서 여전히 높은 성능과 넉넉한 쿼터를 제공합니다.
 
 #### 3) API 무료 티어 및 할당량 (Quota)
-| 구분 | Gemini 2.5 Flash / Flash-Lite | Imagen 4 (API) |
+| 구분 | Gemini 3 Flash / Flash-Lite | Imagen 4 (API) |
 | --- | --- | --- |
-| **분당 요청수 (RPM)** | 15 RPM | 5 RPM |
-| **일일 요청수 (RPD)** | 1,500 RPD | 약 50~100 이미지 |
-| **비용** | $0 (무료) | $0 (무료 범위 내) |
+| **분당 요청수 (RPM)** | 15 RPM | 유료 플랜 전용 |
+| **일일 요청수 (RPD)** | 1,500 RPD | 유료 플랜 전용 |
+| **비용** | $0 (무료) | 유료 (Pay-as-you-go) |
 
-> **참고:** 무료 사용 시 "사용자의 데이터가 모델 학습에 사용될 수 있다"는 점에 유의하세요. 사용량이 초과되면 `429 Too Many Requests` 에러가 발생하며, 태평양 표준시(PT) 자정 기준으로 초기화됩니다. 상세 정보는 [공식 가격 정책](https://ai.google.dev/pricing)을 확인하세요.
+> **참고:** 무료 사용 시 "사용자의 데이터가 모델 학습에 사용될 수 있다"는 점에 유의하세요. 상세 정보는 [공식 가격 정책](https://ai.google.dev/pricing)을 확인하세요.
 
 ## 🚀 실행 및 스케줄
 
