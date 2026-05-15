@@ -433,6 +433,80 @@ def render_markdown(
     else:
         lines.append("새로운 소식이 0건입니다.\n")
 
+    # =====================================================
+    # NEW: Samsung Cases
+    # =====================================================
+    if cl_cases:
+        samsung_cases = []
+        for score, c, ext_causes, ext_snippet in scored_cases:
+            case_name_lower = (c.case_name or "").lower()
+            # 간단하게 case_name_lower에서 samsung 찾기, 그리고 train 키워드 찾기
+            text_lower = f"{ext_causes or ''} {ext_snippet or ''} {c.cause or ''}".lower()
+            
+            # 피고가 Samsung인지 대략적으로 파악하기 위해 v. 뒷부분을 검사
+            import re
+            parts = re.split(r'\s+v\.?\s+|\s+vs\.?\s+', case_name_lower)
+            defendant_part = parts[-1] if len(parts) > 1 else case_name_lower
+            
+            if "samsung" in defendant_part and "train" in text_lower:
+                samsung_cases.append((score, c, ext_causes, ext_snippet))
+        
+        if samsung_cases:
+            lines.append("### ⚖️ Samsung Cases (Courtlistener+RECAP)")
+            lines.append("* 피고가 \"Samsung\" 이면서, 소장문서에 \"train\" 단어가 포함되어 있는 소송건들입니다.")
+            lines.append(
+                "| No. | 상태 | 케이스명 | 도켓번호 | Nature | 감지 레벨⬇️ | "
+                "소송이유 | AI학습관련 핵심주장 | 법적 근거 | 담당판사 | 법원 | "
+                "Complaint 문서 번호 | Complaint PDF 링크 | 최근 도켓 업데이트 |"
+            )
+            lines.append(_md_sep(14))
+
+            for idx, (score, c, extracted_causes, extracted_ai_snippet) in enumerate(samsung_cases, start=1):             
+                slug = _slugify_case_name(c.case_name)
+                docket_url = f"https://www.courtlistener.com/docket/{c.docket_id}/{slug}/"
+      
+                complaint_doc_no = c.complaint_doc_no
+                complaint_link = c.complaint_link
+                
+                if c.docket_id in doc_map:
+                    doc = doc_map[c.docket_id]
+                    complaint_doc_no = doc.doc_number or doc.doc_type
+                    complaint_link = doc.document_url or doc.pdf_url
+             
+                if c.court_short_name and c.court_api_url:
+                    court_display = _mdlink(c.court_short_name, c.court_api_url)
+                else:
+                    court_display = _esc(c.court)
+
+                if complaint_link:
+                    complaint_link_display = _mdlink("📄", complaint_link)
+                else:
+                    complaint_link_display = "-"
+
+                nature_display = _esc(c.nature_of_suit)
+                if (c.nature_of_suit or "").strip() == "820 Copyright":
+                    nature_display = '⚠️**820 Copyright**'
+
+                icon = _get_data_icon(f"{c.case_name} {c.nature_of_suit} {c.cause} {extracted_causes} {extracted_ai_snippet}")
+                
+                lines.append(
+                    f"| {idx} | "
+                    f"{_esc(c.status)} | "
+                    f"{icon} {_mdlink(c.case_name, docket_url)} | "
+                    f"{_mdlink(c.docket_number, docket_url)} | "
+                    f"{nature_display} | "
+                    f"{format_detection_level(score)} | "
+                    f"{_short(extracted_causes, 120)} | "
+                    f"{_short(extracted_ai_snippet, 120)} | "
+                    f"{_esc(c.cause)} | "
+                    f"{_esc(c.judge)} | "
+                    f"{court_display} | "
+                    f"{_esc(complaint_doc_no)} | "
+                    f"{complaint_link_display} | "
+                    f"{_esc(c.recent_updates)} |"
+                )
+            lines.append("")
+
     # RECAP 법원 문서 (.pdf format)
     if cl_docs:
         lines.append("<details>")        
