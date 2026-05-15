@@ -440,14 +440,15 @@ def render_markdown(
         samsung_cases = []
         for score, c, ext_causes, ext_snippet in scored_cases:
             case_name_lower = (c.case_name or "").lower()
-            # 간단하게 case_name_lower에서 samsung 찾기, 그리고 train 키워드 찾기
             text_lower = f"{ext_causes or ''} {ext_snippet or ''} {c.cause or ''}".lower()
             
-            # 피고가 Samsung인지 대략적으로 파악하기 위해 v. 뒷부분을 검사
+            # 피고가 Samsung인지 대략적으로 파악하기 위해 v. 뒷부분 검사
             import re
             parts = re.split(r'\s+v\.?\s+|\s+vs\.?\s+', case_name_lower)
-            defendant_part = parts[-1] if len(parts) > 1 else case_name_lower
+            # 만약 다중 소송 병합 등으로 v. 가 여러번 들어갔을 경우를 대비해 첫 v. 이후의 모든 텍스트를 피고측으로 간주
+            defendant_part = " ".join(parts[1:]) if len(parts) > 1 else case_name_lower
             
+            # 대소문자 구분 없이(이미 lower 적용됨) 피고측 문자열에 samsung이 포함되어 있는지 확인
             if "samsung" in defendant_part and "train" in text_lower:
                 samsung_cases.append((score, c, ext_causes, ext_snippet))
         
