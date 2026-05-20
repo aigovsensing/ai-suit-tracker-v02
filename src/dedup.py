@@ -174,6 +174,39 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
             else:
                 remaining_indices.append(i)
         
+        # 1.5차: BM25 기반 텍스트 유사도 체크 (옵션 활성화 시)
+        enable_bm25 = os.environ.get("BM25_SEMANTIC_DEDUP", "0") == "1"
+        bm25_duplicates = set()
+        
+        if remaining_indices and base_titles and enable_bm25:
+            debug_log(f"Performing BM25 dedup for {len(remaining_indices)} news items against {len(base_titles)} baselines...")
+            try:
+                from rank_bm25 import BM25Okapi
+                
+                tokenized_corpus = [t.lower().split() for t in base_titles]
+                bm25 = BM25Okapi(tokenized_corpus)
+                
+                bm25_threshold = float(os.environ.get("BM25_DEDUP_THRESHOLD", "3.0"))
+                
+                for i in remaining_indices:
+                    title = current_titles[i]
+                    tokenized_query = title.lower().split()
+                    if not tokenized_query:
+                        continue
+                        
+                    scores = bm25.get_scores(tokenized_query)
+                    max_score = max(scores) if len(scores) > 0 else 0
+                    
+                    if max_score >= bm25_threshold:
+                        max_idx = list(scores).index(max_score)
+                        debug_log(f"Skipping BM25 duplicate: '{title}' is similar to '{base_titles[max_idx]}' (score: {max_score:.4f})")
+                        bm25_duplicates.add(i)
+                        
+            except ImportError:
+                debug_log("rank_bm25 library not installed. Skipping BM25 deduplication.")
+
+        remaining_indices = [i for i in remaining_indices if i not in bm25_duplicates]
+
         # 2차: 의미론적 유사도 체크 (Gemini API 및 옵션 활성화 시)
         semantic_duplicates = set()
         enable_semantic = os.environ.get("GEMINI_SEMANTIC_DEDUP", "0") == "1"
