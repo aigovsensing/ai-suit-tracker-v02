@@ -166,7 +166,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         current_titles = [extract_article_title(r[title_idx]) for r in n_rows]
         base_titles = list(base_article_set)
         
-        # 1차: 정확한 일치 제거
+        # 1단계: 정확한 문자열 일치 제거
         remaining_indices = []
         for i, title in enumerate(current_titles):
             if title in base_article_set:
@@ -174,7 +174,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
             else:
                 remaining_indices.append(i)
         
-        # 1.5차: BM25 기반 텍스트 유사도 체크 (옵션 활성화 시)
+        # 2단계: BM25 기반 텍스트 유사도 체크 (옵션 활성화 시)
         enable_bm25 = os.environ.get("BM25_SEMANTIC_DEDUP", "0") == "1"
         bm25_duplicates = set()
         
@@ -207,7 +207,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
 
         remaining_indices = [i for i in remaining_indices if i not in bm25_duplicates]
 
-        # 2차: 의미론적 유사도 체크 (Gemini API 및 옵션 활성화 시)
+        # 3단계: 의미론적 유사도 체크 (Gemini API 및 옵션 활성화 시)
         semantic_duplicates = set()
         enable_semantic = os.environ.get("GEMINI_SEMANTIC_DEDUP", "0") == "1"
         
