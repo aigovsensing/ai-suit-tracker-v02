@@ -436,9 +436,6 @@ def render_markdown(
     # =====================================================
     # NEW: Samsung Cases
     # =====================================================
-    lines.append("### ⚖️ Samsung Cases (Courtlistener+RECAP)")
-    lines.append("* 피고가 \"Samsung\" 이면서, 소장문서에 \"train\" 단어가 포함되어 있는 소송건들입니다.")
-    
     samsung_cases = []
     if cl_cases:
         for score, c, ext_causes, ext_snippet in scored_cases:
@@ -454,6 +451,13 @@ def render_markdown(
             # 대소문자 구분 없이(이미 lower 적용됨) 피고측 문자열에 samsung이 포함되어 있는지 확인
             if "samsung" in defendant_part and "train" in text_lower:
                 samsung_cases.append((score, c, ext_causes, ext_snippet))
+
+    lines.append("### ⚖️ Samsung Cases (Courtlistener+RECAP)")
+    lines.append(
+        f"감지된 소송 사건이 {len(samsung_cases)}건입니다. "
+        f"<details><summary><strong>🔍 Samsung 소송 사건 검색 기준 </strong></summary>"
+        f"피고가 \"Samsung\" 이면서, 소장문서에 \"train\" 단어가 포함되어 있는 소송건들입니다.</details>"
+    )
     
     if samsung_cases:
         lines.append(
@@ -508,8 +512,7 @@ def render_markdown(
                 f"{_esc(c.recent_updates)} |"
             )
         lines.append("")
-    else:
-        lines.append("감지된 소송건이 없습니다.\n")
+
 
     # RECAP 법원 문서 (.pdf format)
     if cl_docs:
