@@ -1,11 +1,13 @@
 import os
-import google.generativeai as genai
-from typing import List, Optional
+import time
+from typing import List, Optional, Tuple
+from google import genai
+from google.genai import types
 from .utils import debug_log
 
 def get_gemini_model_name() -> str:
     """
-    환경 변수에서 사용할 Gemini 모델명을 가져옵니다. 기본값은 'gemini-3-flash-preview'입니다.
+    환경 변수에서 사용할 Gemini 모델명을 가져옵니다. 기본값은 'gemini-flash-latest'입니다.
     """
     return os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 
@@ -14,12 +16,16 @@ def get_gemini_model_display_name() -> str:
     출력용으로 친숙한 모델 이름을 반환합니다.
     """
     model_name = get_gemini_model_name()
+    if "gemini-3.5" in model_name.lower():
+        return "Gemini 3.5 Flash"
     if "gemini-3-flash" in model_name.lower() or "gemini-flash" in model_name.lower():
         return "Gemini 3 Flash"
-    if "gemini-1.5-pro" in model_name.lower() or "gemini-pro" in model_name.lower():
-        return "Gemini 1.5 Pro"
+    if "gemini-2.5-flash" in model_name.lower():
+        return "Gemini 2.5 Flash"
     if "gemini-2.0-flash" in model_name.lower():
         return "Gemini 2.0 Flash"
+    if "gemini-1.5-pro" in model_name.lower() or "gemini-pro" in model_name.lower():
+        return "Gemini 1.5 Pro"
     
     # 환경변수에 직접 'Gemini 2.5 Flash' 처럼 넣었을 경우를 위해
     if "-" not in model_name and not model_name.islower():
@@ -30,104 +36,111 @@ def get_gemini_model_display_name() -> str:
 def get_gemini_summary(prompt: str) -> str:
     """
     Gemini API를 사용하여 텍스트 요약을 생성합니다.
+    rate limit 및 transient 503 오류가 발생할 경우를 위해 exponential backoff와 fallback model을 포함하고 있습니다.
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         debug_log("GEMINI_API_KEY가 설정되지 않아 Gemini 요약을 건너뜁니다.")
         return ""
 
-    try:
-        # REST 전송 방식을 사용하여 v1beta의 추가 메타데이터 필드를 더 안정적으로 가져오도록 설정
-        genai.configure(api_key=api_key, transport='rest')
+    model_name = get_gemini_model_name()
+    max_retries = 3
+    base_delay = 2.0  # seconds
+    
+    # 순차적으로 시도할 후보 모델 리스트
+    models_to_try = [model_name]
+    if "gemini-3.5" in model_name or "gemini-flash" in model_name:
+        models_to_try.append("gemini-2.5-flash")
+
+    last_error = None
+    final_model = model_name
+
+    for current_model in models_to_try:
+        final_model = current_model
+        client = genai.Client(api_key=api_key)
         
-        # 안전 설정 (HARM_CATEGORY_ prefix 기반)
-        # 법률 데이터 분석 중 차단을 방지하기 위해 최소화된 필터를 유지합니다.
+        # 법률 데이터 분석 중 차단을 방지하기 위해 최소화된 필터를 설정합니다.
         safety_settings = [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
         ]
 
-        # 모델 호출
-        try:
-            model_name = get_gemini_model_name()
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                safety_settings=safety_settings
-            )
-            response = model.generate_content(prompt)
-            
-            # 응답 검증 및 텍스트 추출
-            if response.candidates and response.candidates[0].content.parts:
-                # 모델 버전 및 서비스 티어 정보 추출 (to_dict() 및 직접 속성 접근 병용)
-                resp_dict = {}
-                try:
-                    if hasattr(response, 'to_dict'):
-                        resp_dict = response.to_dict()
-                except Exception:
-                    pass
+        for attempt in range(max_retries):
+            try:
+                debug_log(f"Gemini API 호출 시도 (모델: {current_model}, 시도: {attempt + 1}/{max_retries})")
+                
+                response = client.models.generate_content(
+                    model=current_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        safety_settings=safety_settings
+                    )
+                )
 
-                # 1) 모델 버전 추출 (최대한 다양한 경로 시도)
-                model_version = None
-                
-                # 직접 속성 확인
-                if hasattr(response, 'model_version'):
-                    model_version = response.model_version
-                
-                # 내부 _result 객체 확인 (SDK 내부 proto 메시지)
-                if not model_version and hasattr(response, '_result'):
-                    model_version = getattr(response._result, 'model_version', None)
-                
-                # dict에서 확인
-                if not model_version:
-                    model_version = resp_dict.get('model_version') or resp_dict.get('modelVersion')
-                
-                # 최후의 수단: model_name 사용
-                if not model_version:
-                    model_version = model_name
-
-                # 2) 서비스 티어 추출
-                service_tier = '알 수 없음'
-                
-                # 직접 속성 확인
-                usage_obj = getattr(response, 'usage_metadata', None)
-                if usage_obj:
-                    service_tier = getattr(usage_obj, 'service_tier', None) or getattr(usage_obj, 'serviceTier', None)
-                
-                # 내부 _result.usage_metadata 확인
-                if (not service_tier or str(service_tier).lower() == 'none') and hasattr(response, '_result'):
-                    usage_proto = getattr(response._result, 'usage_metadata', None)
-                    if usage_proto:
-                        service_tier = getattr(usage_proto, 'service_tier', None)
-                
-                # dict에서 확인
-                if not service_tier or str(service_tier).lower() == 'none':
-                    usage_dict = resp_dict.get('usage_metadata') or resp_dict.get('usageMetadata') or {}
-                    service_tier = usage_dict.get('service_tier') or usage_dict.get('serviceTier')
-                
-                # 최종 포맷팅 및 기본값 처리
-                if service_tier and str(service_tier).lower() != 'none':
-                    service_tier = str(service_tier).capitalize()
-                elif resp_dict.get('usage_metadata') or resp_dict.get('usageMetadata'):
+                if response.text:
+                    model_version = getattr(response, "model_version", None) or current_model
+                    
                     service_tier = "Standard"
+                    usage_obj = getattr(response, "usage_metadata", None)
+                    if usage_obj:
+                        tier_val = getattr(usage_obj, "service_tier", None)
+                        if tier_val and str(tier_val).lower() != "none":
+                            service_tier = str(tier_val).capitalize()
 
-                debug_log(f"Gemini Metadata 추출 결과 - model_version: {model_version}, service_tier: {service_tier}")
+                    debug_log(f"Gemini Metadata 추출 결과 - model_version: {model_version}, service_tier: {service_tier}")
+                    
+                    header = f"모델 정보: {model_version}\n서비스 티어: {service_tier}\n\n"
+                    return header + response.text
+                else:
+                    raise ValueError("응답 텍스트가 비어 있거나 차단되었습니다.")
 
-                # 결과 상단에 정보 추가
-                header = f"모델 정보: {model_version}\n서비스 티어: {service_tier}\n\n"
-                return header + response.text
-            else:
-                debug_log(f"Gemini 응답이 차단되거나 후보가 없습니다: {response.prompt_feedback if hasattr(response, 'prompt_feedback') else 'No candidates'}")
-                return ""
+            except Exception as e:
+                last_error = e
+                debug_log(f"Gemini API 호출 오류 발생: {e}")
+                
+                # Rate limit (429) 또는 일시적인 서버 오류 (500, 503, 504) 여부 파악
+                is_transient = False
+                err_lower = str(e).lower()
+                if "429" in err_lower or "resource_exhausted" in err_lower:
+                    is_transient = True
+                    debug_log("Rate limit (429 / RESOURCE_EXHAUSTED) 감지.")
+                elif "503" in err_lower or "unavailable" in err_lower:
+                    is_transient = True
+                    debug_log("Service Unavailable (503) 감지.")
+                elif "500" in err_lower or "504" in err_lower or "internal" in err_lower:
+                    is_transient = True
+                    debug_log("Internal Server Error (500 / 504) 감지.")
 
-        except Exception as e:
-            debug_log(f"Gemini 모델 호출 중 오류 발생: {e}")
-            return ""
+                if is_transient and attempt < max_retries - 1:
+                    sleep_time = base_delay * (2 ** attempt)
+                    debug_log(f"{sleep_time}초 후 재시도합니다...")
+                    time.sleep(sleep_time)
+                else:
+                    # 일시적이지 않은 오류거나 재시도 횟수를 초과한 경우 루프 탈출 후 다음 모델 시도
+                    break
 
-    except Exception as e:
-        debug_log(f"Gemini API 라이브러리 구성 중 오류 발생: {e}")
-        return ""
+    # 모든 재시도 및 백업 모델 호출마저 실패한 경우: 투명하게 에러 경고 마크다운 작성
+    error_msg = str(last_error) if last_error else "알 수 없는 오류"
+    
+    title = ""
+    if "조간뉴스" in prompt:
+        title = "## 🗓️ (조간뉴스) 동향 요약 생성 실패\n\n"
+    elif "석간뉴스" in prompt:
+        title = "## 🧠 (석간뉴스) 당일 요약 보고서 생성 실패\n\n"
+
+    warning_section = (
+        f"{title}"
+        "> [!CAUTION]\n"
+        "> **🤖 Gemini API 호출 실패**\n"
+        "> Gemini API 호출 중 오류가 발생하여 요약 보고서를 자동 생성할 수 없습니다.\n"
+        f"> - **최종 시도 모델**: `{final_model}`\n"
+        f"> - **오류 메시지**: `{error_msg}`\n"
+        "> \n"
+        "> Rate Limit 초과 또는 구글 API 서버의 일시적인 혼잡/점검 상태일 수 있습니다. 잠시 후 워크플로우를 재실행해 보세요. ✨\n"
+    )
+    return warning_section
 
 def get_embeddings(texts: List[str]) -> List[List[float]]:
     """
@@ -138,18 +151,40 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
         return []
 
     try:
-        genai.configure(api_key=api_key, transport='rest')
-        # 한 번에 최대 100개까지 지원하므로 배치 처리가 필요할 수 있지만, 
-        # 여기서는 보통 뉴스 건수가 적으므로 단순 호출합니다.
-        result = genai.embed_content(
-            model="models/text-embedding-004",
-            content=texts,
-            task_type="retrieval_document"
+        client = genai.Client(api_key=api_key)
+        # 최신 고성능 모델인 gemini-embedding-2를 기본 사용합니다.
+        response = client.models.embed_content(
+            model="models/gemini-embedding-2",
+            contents=texts,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_DOCUMENT"
+            )
         )
-        return result['embeddings']
+        embeddings = []
+        if response.embeddings:
+            for emb in response.embeddings:
+                embeddings.append(emb.values)
+        return embeddings
     except Exception as e:
-        debug_log(f"Gemini 임베딩 생성 중 오류 발생: {e}")
-        return []
+        debug_log(f"Gemini 임베딩(gemini-embedding-2) 생성 중 오류 발생: {e}")
+        # fallback으로 gemini-embedding-001 사용
+        try:
+            client = genai.Client(api_key=api_key)
+            response = client.models.embed_content(
+                model="models/gemini-embedding-001",
+                contents=texts,
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_DOCUMENT"
+                )
+            )
+            embeddings = []
+            if response.embeddings:
+                for emb in response.embeddings:
+                    embeddings.append(emb.values)
+            return embeddings
+        except Exception as e2:
+            debug_log(f"Gemini 임베딩 fallback(gemini-embedding-001) 생성 중 오류 발생: {e2}")
+            return []
 
 def calculate_cosine_similarity(v1: List[float], v2: List[float]) -> float:
     """
@@ -167,8 +202,6 @@ def calculate_cosine_similarity(v1: List[float], v2: List[float]) -> float:
     
     return dot_product / (norm_v1 * norm_v2)
 
-from typing import List, Optional, Tuple
-
 def generate_gemini_image(prompt: str, output_path: str) -> Tuple[Optional[str], Optional[str]]:
     """
     Google AI Studio의 Imagen 3 모델을 사용하여 이미지를 생성하고 저장합니다.
@@ -181,10 +214,7 @@ def generate_gemini_image(prompt: str, output_path: str) -> Tuple[Optional[str],
         return None, msg
 
     try:
-        from google import genai as genai_new
-        from google.genai import types
-        
-        client = genai_new.Client(api_key=api_key)
+        client = genai.Client(api_key=api_key)
         
         # 지브리 스타일을 위한 프롬프트 강화
         enhanced_prompt = f"Studio Ghibli anime style illustration, {prompt}. Hand-drawn aesthetic, lush colors, whimsical lighting, detailed scenery, painterly texture."
