@@ -90,7 +90,9 @@ def generate_daily_report_from_data(news_data: dict, case_data: dict) -> str:
     debug_log(f"Gemini 당일 요약 리포트 생성 중 (데이터: 뉴스 {len(news_lines)}건, 소송 {len(case_lines)}건)")
     summary = get_gemini_summary(prompt)
     if not summary:
-        summary = "## 🧠 (석간뉴스) 당일 신규/업데이트 소송건 요약 보고서\n\n> [!CAUTION]\n> **보고서 요약 실패:** Gemini API 호출에 실패하거나 응답이 차단되어 요약 보고서를 생성할 수 없습니다. 데이터 건수를 확인해 주세요.\n"
+        # GEMINI_API_KEY가 설정되지 않은 경우 (get_gemini_summary가 "" 반환)
+        summary = "## 🧠 (석간뉴스) 당일 신규/업데이트 소송건 요약 보고서\n\n> [!CAUTION]\n> **보고서 요약 실패:** GEMINI_API_KEY가 설정되지 않아 요약 보고서를 생성할 수 없습니다.\n"
+    # get_gemini_summary()가 API 오류 발생 시 이미 에러 메시지를 포함한 경고 마크다운을 반환하므로 별도 처리 불필요
     
     # [추가] 지브리 스타일 이미지 생성 제어 (환경 변수 확인)
     image_gen_enabled = os.environ.get("GEMINI_DAILY_REPORT_IMAGEGEN") == "1"

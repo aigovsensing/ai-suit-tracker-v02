@@ -123,7 +123,23 @@ def get_gemini_summary(prompt: str) -> str:
 
     # 모든 재시도 및 백업 모델 호출마저 실패한 경우: 투명하게 에러 경고 마크다운 작성
     error_msg = str(last_error) if last_error else "알 수 없는 오류"
-    
+
+    # 에러 메시지에서 핵심 정보(code, message)만 추출하여 가독성 있는 요약 생성
+    import re
+    short_error = error_msg
+    try:
+        code_match = re.search(r"'code':\s*(\d+)", error_msg)
+        msg_match = re.search(r"'message':\s*'([^']+)'", error_msg)
+        if not msg_match:
+            # 큰따옴표로 감싸인 경우도 처리
+            msg_match = re.search(r'"message":\s*"([^"]+)"', error_msg)
+        if code_match or msg_match:
+            code_str = code_match.group(1) if code_match else ""
+            msg_str = msg_match.group(1).split("\n")[0].strip() if msg_match else ""
+            short_error = f"code: {code_str}, message: {msg_str}" if code_str else msg_str
+    except Exception:
+        pass  # 파싱 실패 시 원본 에러 메시지 사용
+
     title = ""
     if "조간뉴스" in prompt:
         title = "## 🗓️ (조간뉴스) 동향 요약 생성 실패\n\n"
@@ -134,9 +150,9 @@ def get_gemini_summary(prompt: str) -> str:
         f"{title}"
         "> [!CAUTION]\n"
         "> **🤖 Gemini API 호출 실패**\n"
-        "> Gemini API 호출 중 오류가 발생하여 요약 보고서를 자동 생성할 수 없습니다.\n"
+        "> Gemini API 호출에 실패하거나 응답이 차단되어 요약 보고서를 자동 생성할 수 없습니다.\n"
         f"> - **최종 시도 모델**: `{final_model}`\n"
-        f"> - **오류 메시지**: `{error_msg}`\n"
+        f"> - **오류 정보**: `{short_error}`\n"
         "> \n"
         "> Rate Limit 초과 또는 구글 API 서버의 일시적인 혼잡/점검 상태일 수 있습니다. 잠시 후 워크플로우를 재실행해 보세요. ✨\n"
     )
