@@ -42,7 +42,9 @@ def main() -> None:
     # KST 기준 날짜 생성
     now_kst = datetime.now(ZoneInfo("Asia/Seoul"))
     run_ts_kst = now_kst.strftime("%Y-%m-%d %H:%M")
-    issue_day_kst = now_kst.strftime("%Y-%m-%d")
+    weekdays_en = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    weekday_str = weekdays_en[now_kst.weekday()]
+    issue_day_kst = f"{now_kst.strftime('%Y-%m-%d')} {weekday_str}"
     issue_title = f"{base_title} ({issue_day_kst})"
     debug_log(f"KST 기준 실행시각: {run_ts_kst}")
     
