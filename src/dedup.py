@@ -92,13 +92,8 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
     """
     이전 GitHub 댓글들을 분석하여 중복된 데이터를 'skip' 처리하고 요약을 추가합니다.
     """
-    if not comments:
-        # 댓글이 없는 경우 신규 데이터 정보 추출
-        news_section = extract_section(md, "### 📰 AI Suit News")
-        _, n_rows, _ = parse_table(news_section)
-        recap_section = extract_section(md, "### ⚖️ Cases")
-        _, c_rows, _ = parse_table(recap_section)
-        return md, len(n_rows), len(c_rows)
+    comments = comments or []
+
 
     # 1) Base Snapshot Key Set 생성 (모든 이전 댓글 대상)
     base_article_set: Set[str] = set()
@@ -158,6 +153,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         no_idx = n_headers.index("No.") if "No." in n_headers else None
         date_idx = n_headers.index("기사일자") if "기사일자" in n_headers else None
         risk_idx = n_headers.index("감지 레벨⬇️") if "감지 레벨⬇️" in n_headers else None
+        dup_idx = n_headers.index("중복건수") if "중복건수" in n_headers else None
 
         header_line, separator_line = n_table_meta
         non_skip_rows = []
@@ -210,30 +206,96 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
         # 3단계: 의미론적 유사도 체크 (Gemini API 및 옵션 활성화 시)
         semantic_duplicates = set()
         enable_semantic = os.environ.get("GEMINI_SEMANTIC_DEDUP", "0") == "1"
+        current_embeddings = None
         
-        if remaining_indices and base_titles and os.environ.get("GEMINI_API_KEY") and enable_semantic:
-            debug_log(f"Performing semantic dedup for {len(remaining_indices)} news items against {len(base_titles)} baselines...")
-            
-            # 임베딩 생성 (배치)
+        if remaining_indices and os.environ.get("GEMINI_API_KEY") and enable_semantic:
+            debug_log(f"Fetching embeddings for {len(remaining_indices)} current news items...")
             current_embeddings = get_embeddings([current_titles[i] for i in remaining_indices])
-            base_embeddings = get_embeddings(base_titles)
             
-            if current_embeddings and base_embeddings:
-                threshold = float(os.environ.get("SEMANTIC_DEDUP_THRESHOLD", "0.85"))
-                for i_idx, i in enumerate(remaining_indices):
-                    curr_emb = current_embeddings[i_idx]
-                    for j_idx, base_emb in enumerate(base_embeddings):
-                        similarity = calculate_cosine_similarity(curr_emb, base_emb)
-                        if similarity >= threshold:
-                            debug_log(f"Skipping semantic duplicate: '{current_titles[i]}' is similar to '{base_titles[j_idx]}' (sim: {similarity:.4f})")
-                            semantic_duplicates.add(i)
-                            break
-        
-        for i in remaining_indices:
-            if i not in semantic_duplicates:
-                non_skip_rows.append(n_rows[i])
-                new_article_count += 1
-        
+            if base_titles:
+                debug_log(f"Performing semantic dedup for {len(remaining_indices)} news items against {len(base_titles)} baselines...")
+                base_embeddings = get_embeddings(base_titles)
+                
+                if current_embeddings and base_embeddings:
+                    threshold = float(os.environ.get("SEMANTIC_DEDUP_THRESHOLD", "0.85"))
+                    for i_idx, i in enumerate(remaining_indices):
+                        curr_emb = current_embeddings[i_idx]
+                        for j_idx, base_emb in enumerate(base_embeddings):
+                            similarity = calculate_cosine_similarity(curr_emb, base_emb)
+                            if similarity >= threshold:
+                                debug_log(f"Skipping semantic duplicate: '{current_titles[i]}' is similar to '{base_titles[j_idx]}' (sim: {similarity:.4f})")
+                                semantic_duplicates.add(i)
+                                break
+
+        emb_map = {}
+        if current_embeddings:
+            for idx_in_rem, i in enumerate(remaining_indices):
+                if idx_in_rem < len(current_embeddings):
+                    emb_map[i] = current_embeddings[idx_in_rem]
+
+        surviving_baseline_indices = [i for i in remaining_indices if i not in semantic_duplicates]
+
+        # 4단계: 현재 배치 내의 기사들 간 중복 체크 (Intra-batch deduplication 및 중복건수 계산)
+        accepted_indices = []
+        dup_counts = {}  # index -> count
+
+        for i in surviving_baseline_indices:
+            title_i = current_titles[i]
+            is_dup = False
+            matched_acc_idx = None
+
+            for acc_idx in accepted_indices:
+                title_acc = current_titles[acc_idx]
+
+                # 1. 정확한 제목 일치 (대소문자 및 공백 무시)
+                if title_i.strip().lower() == title_acc.strip().lower():
+                    is_dup = True
+                    matched_acc_idx = acc_idx
+                    debug_log(f"Intra-batch exact duplicate: '{title_i}' matches '{title_acc}'")
+                    break
+
+                # 2. BM25 유사도 매칭 (옵션)
+                if enable_bm25:
+                    try:
+                        from rank_bm25 import BM25Okapi
+                        tokenized_acc = [title_acc.lower().split()]
+                        bm25_acc = BM25Okapi(tokenized_acc)
+                        tokenized_query = title_i.lower().split()
+                        if tokenized_query:
+                            bm25_threshold = float(os.environ.get("BM25_DEDUP_THRESHOLD", "3.0"))
+                            scores = bm25_acc.get_scores(tokenized_query)
+                            max_score = max(scores) if len(scores) > 0 else 0
+                            if max_score >= bm25_threshold:
+                                is_dup = True
+                                matched_acc_idx = acc_idx
+                                debug_log(f"Intra-batch BM25 duplicate: '{title_i}' is similar to '{title_acc}' (score: {max_score:.4f})")
+                                break
+                    except Exception:
+                        pass
+
+                # 3. 의미론적 유사도 매칭 (옵션)
+                if enable_semantic and i in emb_map and acc_idx in emb_map:
+                    threshold = float(os.environ.get("SEMANTIC_DEDUP_THRESHOLD", "0.85"))
+                    sim = calculate_cosine_similarity(emb_map[i], emb_map[acc_idx])
+                    if sim >= threshold:
+                        is_dup = True
+                        matched_acc_idx = acc_idx
+                        debug_log(f"Intra-batch semantic duplicate: '{title_i}' is similar to '{title_acc}' (sim: {sim:.4f})")
+                        break
+
+            if is_dup:
+                dup_counts[matched_acc_idx] = dup_counts.get(matched_acc_idx, 0) + 1
+            else:
+                accepted_indices.append(i)
+                dup_counts[i] = 0
+
+        for i in accepted_indices:
+            row = n_rows[i]
+            if dup_idx is not None:
+                row[dup_idx] = str(dup_counts[i])
+            non_skip_rows.append(row)
+            new_article_count += 1
+
         if new_article_count == 0:
             new_news_section = "\n새로운 소식이 0건입니다.\n"
         else:
@@ -389,8 +451,16 @@ def generate_consolidated_report(comments: List[dict]) -> str:
             det_idx = meta["news_cols"].index("감지 레벨⬇️")
             news_rows.sort(key=lambda r: int(re.search(r"(\d+)", r[det_idx]).group(1)) if re.search(r"(\d+)", r[det_idx]) else 0, reverse=True)
         no_idx = meta["news_cols"].index("No.") if "No." in meta["news_cols"] else None
+        
+        expected_len = len(meta["news_cols"])
         for i, row in enumerate(news_rows, 1):
-            if no_idx is not None: row[no_idx] = str(i)
+            row = list(row)
+            if len(row) < expected_len:
+                row.extend(["0"] * (expected_len - len(row)))
+            elif len(row) > expected_len:
+                row = row[:expected_len]
+            if no_idx is not None: 
+                row[no_idx] = str(i)
             lines.append("| " + " | ".join(row) + " |")
     else: 
         lines.append("\n수집된 뉴스 소식이 없습니다.")
@@ -406,8 +476,16 @@ def generate_consolidated_report(comments: List[dict]) -> str:
             det_idx = meta["case_cols"].index("감지 레벨⬇️")
             case_rows.sort(key=lambda r: int(re.search(r"(\d+)", r[det_idx]).group(1)) if re.search(r"(\d+)", r[det_idx]) else 0, reverse=True)
         no_idx = meta["case_cols"].index("No.") if "No." in meta["case_cols"] else None
+        
+        expected_len = len(meta["case_cols"])
         for i, row in enumerate(case_rows, 1):
-            if no_idx is not None: row[no_idx] = str(i)
+            row = list(row)
+            if len(row) < expected_len:
+                row.extend(["0"] * (expected_len - len(row)))
+            elif len(row) > expected_len:
+                row = row[:expected_len]
+            if no_idx is not None: 
+                row[no_idx] = str(i)
             lines.append("| " + " | ".join(row) + " |")
     else: 
         lines.append("\n수집된 사건 소식이 없습니다.")

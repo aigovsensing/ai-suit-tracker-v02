@@ -300,8 +300,8 @@ def render_markdown(
     if lawsuits:
         debug_log("'News' is printed.")            
         lines.append("")
-        lines.append("| No. | 기사일자 | 제목 | 소송번호 | 조건 (주요 키워드) | 소송사유 | 감지 레벨⬇️ |")
-        lines.append(_md_sep(7))
+        lines.append("| No. | 기사일자 | 제목 | 소송번호 | 조건 (주요 키워드) | 소송사유 | 감지 레벨⬇️ | 중복건수 |")
+        lines.append(_md_sep(8))
 
         # 기사일자 기준으로 정렬 (날짜 내림차순, 동일 날짜 시 감지 레벨 내림차순)
         scored_lawsuits = []
@@ -326,7 +326,8 @@ def render_markdown(
                 f"{_esc(s.case_number)} | "
                 f"{_esc(keyword_display)} | "
                 f"{_short(s.reason)} | "
-                f"{format_detection_level(risk_score)} |"
+                f"{format_detection_level(risk_score)} | "
+                f"0 |"
             )
         lines.append("")
     else:
