@@ -23,6 +23,7 @@ from .courtlistener import (
 from .queries import COURTLISTENER_QUERIES
 from .trend import generate_trend_summary
 from .gemini import get_gemini_model_display_name
+from .email_sender import send_email_report, get_subject_for_report
 
 def main() -> None:
     # 0) 환경 변수 로드
@@ -212,6 +213,12 @@ def main() -> None:
                 if trend_summary:
                     create_comment(owner, repo, gh_token, issue_no, trend_summary)
                     debug_log(f"Issue #{issue_no} Gemini 동향 요약 댓글 업로드 완료")
+                    # 이메일 발송
+                    try:
+                        email_subject = get_subject_for_report(trend_summary, "morning", trend_days)
+                        send_email_report(email_subject, trend_summary)
+                    except Exception as email_err:
+                        print(f"[ERROR] 조간뉴스 이메일 발송 중 예외 발생: {email_err}")
         except Exception as e:
             debug_log(f"Gemini 동향 요약 생성 중 오류 발생: {e}")
     else:

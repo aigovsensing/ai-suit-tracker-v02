@@ -2,6 +2,7 @@ from __future__ import annotations
 import requests
 from typing import Dict, List
 from .dedup import generate_consolidated_report
+from .email_sender import send_email_report, get_subject_for_report
 
 def _headers(token: str) -> Dict[str, str]:
     return {
@@ -120,6 +121,13 @@ def close_other_daily_issues(owner: str, repo: str, token: str, label: str, base
                 daily_summary = generate_daily_report_from_data(u_news, u_cases)
                 if daily_summary:
                     create_comment(owner, repo, token, num, daily_summary)
+                    # 이메일 발송
+                    try:
+                        email_subject = get_subject_for_report(daily_summary, "evening")
+                        send_email_report(email_subject, daily_summary)
+                    except Exception as email_err:
+                        import sys
+                        print(f"[ERROR] 석간뉴스 이메일 발송 중 예외 발생: {email_err}", file=sys.stderr)
                 
                 # 3) 최종 종료 알림 (footer)
                 final_body = f"--- \n\n{footer}"

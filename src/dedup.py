@@ -237,12 +237,13 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
 
         # 4단계: 현재 배치 내의 기사들 간 중복 체크 (Intra-batch deduplication 및 중복건수 계산)
         accepted_indices = []
-        dup_counts = {}  # index -> count
+        dup_details = {}  # index -> {"제목": count, "키워드": count, "의미": count}
 
         for i in surviving_baseline_indices:
             title_i = current_titles[i]
             is_dup = False
             matched_acc_idx = None
+            dup_type = None
 
             for acc_idx in accepted_indices:
                 title_acc = current_titles[acc_idx]
@@ -250,6 +251,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
                 # 1. 정확한 제목 일치 (대소문자 및 공백 무시)
                 if title_i.strip().lower() == title_acc.strip().lower():
                     is_dup = True
+                    dup_type = "제목"
                     matched_acc_idx = acc_idx
                     debug_log(f"Intra-batch exact duplicate: '{title_i}' matches '{title_acc}'")
                     break
@@ -267,6 +269,7 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
                             max_score = max(scores) if len(scores) > 0 else 0
                             if max_score >= bm25_threshold:
                                 is_dup = True
+                                dup_type = "키워드"
                                 matched_acc_idx = acc_idx
                                 debug_log(f"Intra-batch BM25 duplicate: '{title_i}' is similar to '{title_acc}' (score: {max_score:.4f})")
                                 break
@@ -279,20 +282,34 @@ def apply_deduplication(md: str, comments: List[dict]) -> tuple[str, int, int]:
                     sim = calculate_cosine_similarity(emb_map[i], emb_map[acc_idx])
                     if sim >= threshold:
                         is_dup = True
+                        dup_type = "의미"
                         matched_acc_idx = acc_idx
                         debug_log(f"Intra-batch semantic duplicate: '{title_i}' is similar to '{title_acc}' (sim: {sim:.4f})")
                         break
 
             if is_dup:
-                dup_counts[matched_acc_idx] = dup_counts.get(matched_acc_idx, 0) + 1
+                if matched_acc_idx in dup_details:
+                    dup_details[matched_acc_idx][dup_type] = dup_details[matched_acc_idx].get(dup_type, 0) + 1
             else:
                 accepted_indices.append(i)
-                dup_counts[i] = 0
+                dup_details[i] = {"제목": 0, "키워드": 0, "의미": 0}
 
         for i in accepted_indices:
             row = n_rows[i]
             if dup_idx is not None:
-                row[dup_idx] = str(dup_counts[i])
+                details = dup_details[i]
+                total_dup = sum(details.values())
+                if total_dup == 0:
+                    row[dup_idx] = "0"
+                else:
+                    parts = []
+                    if details.get("제목", 0) > 0:
+                        parts.append(f"제목:{details['제목']}")
+                    if details.get("키워드", 0) > 0:
+                        parts.append(f"키워드:{details['키워드']}")
+                    if details.get("의미", 0) > 0:
+                        parts.append(f"의미:{details['의미']}")
+                    row[dup_idx] = f"{total_dup} ({', '.join(parts)})"
             non_skip_rows.append(row)
             new_article_count += 1
 
