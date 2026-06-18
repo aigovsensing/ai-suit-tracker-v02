@@ -73,9 +73,12 @@ def send_email_report(subject: str, content: str) -> None:
             "_captcha": "false"
         }
         
+        headers = {
+            "Referer": "https://github.com"
+        }
         try:
             debug_log(f"이메일 전송 요청 중: {receiver} (제목: {subject})")
-            response = requests.post(url, json=payload, timeout=20)
+            response = requests.post(url, json=payload, headers=headers, timeout=20)
             if response.status_code == 200:
                 res_data = response.json()
                 if res_data.get("success") == "true" or res_data.get("success") is True:
