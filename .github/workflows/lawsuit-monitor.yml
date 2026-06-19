@@ -55,7 +55,7 @@ jobs:
           # 디버그 모드(0/1). Actions -> Variables에 DEBUG=1 설정 시 활성화
           DEBUG: ${{ vars.DEBUG }}
           # 이메일 전송 활성화 (1: 활성화, 0: 비활성화)
-          ENABLE_EMAIL_SENDER: ${{ vars.ENABLE_EMAIL_SENDER || '1' }}
+          ENABLE_EMAIL_SENDER: ${{ vars.ENABLE_EMAIL_SENDER || '0' }}
         run: |
           python -m src.run
 
