@@ -56,6 +56,13 @@ jobs:
           DEBUG: ${{ vars.DEBUG }}
           # 이메일 전송 활성화 (1: 활성화, 0: 비활성화)
           ENABLE_EMAIL_SENDER: ${{ vars.ENABLE_EMAIL_SENDER || '0' }}
+          # SMTP 설정 변수 주입
+          SMTP_HOST: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ vars.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS || secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          EMAIL_TO: ${{ vars.EMAIL_TO }}
         run: |
           python -m src.run
 
