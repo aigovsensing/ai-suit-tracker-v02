@@ -33,7 +33,7 @@
         <!-- Hero Section -->
         <section class="hero">
             <div class="reveal">
-                <div class="hero-badge">v3.0 Enterprise Ready</div>
+                <div class="hero-badge">v3.1 Enterprise Ready</div>
                 <h1>Intelligence for the <br><span style="color: var(--primary);">AI Litigation Era</span></h1>
                 <p>
                     AI 모델 학습을 위한 데이터 무단 사용 및 저작권 소송을 실시간으로 추적하고 분석하는 고성능 인텔리전트 자동화 도구입니다. 리스크를 사전에 감지하고 법적 대응력을 강화하세요.
@@ -61,7 +61,7 @@
                 <div class="feature-card reveal" style="transition-delay: 0.2s;">
                     <div class="feature-icon"><i class="fas fa-microchip"></i></div>
                     <h3>Gemini AI Powered</h3>
-                    <p>Gemini 3 Flash를 통해 복잡한 법률 본문을 핵심 요약하고, Gemini Embedding(text-embedding-004) 기술로 의미론적 중복을 완벽하게 필터링합니다.</p>
+                    <p>Gemini Flash Latest를 통해 복잡한 법률 본문을 핵심 요약하고, Gemini Embedding(gemini-embedding-2) 기술로 의미론적 중복을 완벽하게 필터링합니다.</p>
                 </div>
                 <div class="feature-card reveal" style="transition-delay: 0.3s;">
                     <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
@@ -72,6 +72,11 @@
                     <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
                     <h3>Strategic Analysis</h3>
                     <p>단순 요약을 넘어 삼성전자 가우스(Gauss) 등 생성형 AI 모델 및 갤럭시 AI 서비스에 미칠 수 있는 법적/기술적 영향력을 심층 분석합니다.</p>
+                </div>
+                <div class="feature-card reveal" style="transition-delay: 0.5s;">
+                    <div class="feature-icon"><i class="fas fa-envelope-open-text"></i></div>
+                    <h3>HTML Email Reports</h3>
+                    <p>이메일 발송 시 Markdown을 HTML로 자동 변환하여 테이블·코드블록·Alert 박스가 완벽하게 렌더링됩니다. Gmail·Outlook 등 주요 클라이언트와 호환되는 인라인 CSS 템플릿을 적용합니다.</p>
                 </div>
             </div>
         </section>
@@ -182,11 +187,15 @@
             <div class="setup-grid reveal">
                 <div class="code-container">
                     <pre><code># AI 지능형 기능 설정 (Secrets/Variables)
-GEMINI_API_KEY = "your_key"
-GEMINI_SEMANTIC_DEDUP = 1
-GEMINI_DAILY_REPORT_IMAGEGEN = 1
-GEMINI_MODEL = "gemini-3-flash-preview"
-PREVIOUS_ITEM_DEDUP_DAYS = 3</code></pre>
+GEMINI_API_KEY = "your_key"           # Google AI Studio
+GEMINI_MODEL = "gemini-flash-latest"  # 최신 Flash 모델 사용
+COURTLISTENER_TOKEN = "your_token"    # CourtListener API
+SMTP_PASS = "your_app_password"       # Gmail 앱 비밀번호
+ENABLE_EMAIL_SENDER = 1               # HTML 이메일 발송 활성화
+GEMINI_SEMANTIC_DEDUP = 1             # 임베딩 기반 중복 제거
+BM25_SEMANTIC_DEDUP = 1               # BM25 키워드 중복 제거
+GEMINI_DAILY_REPORT_IMAGEGEN = 1      # Imagen 3 이미지 생성
+PREVIOUS_ITEM_DEDUP_DAYS = 3          # 교차일 중복 제거 범위</code></pre>
                 </div>
                 <div class="setup-text">
                     <h3>Simple Deployment</h3>
@@ -206,10 +215,10 @@ PREVIOUS_ITEM_DEDUP_DAYS = 3</code></pre>
         </div>
         <div class="social-links">
             <a href="https://github.com/aigovsensing/ai-suit-tracker-v02"><i class="fab fa-github"></i></a>
+            <a href="https://github.com/aigovsensing/ai-suit-tracker-v02/tree/main/document" title="개발자 문서"><i class="fas fa-book"></i></a>
             <a href="#"><i class="fab fa-slack"></i></a>
-            <a href="#"><i class="fas fa-globe"></i></a>
         </div>
-        <p class="copyright">&copy; 2026 AI Lawsuit Radar. Built for AI Governance & Legal Tech.</p>
+        <p class="copyright">&copy; 2026 AI Lawsuit Radar. Built for AI Governance &amp; Legal Tech.</p>
     </footer>
 
     <script src="js/app.js"></script>
